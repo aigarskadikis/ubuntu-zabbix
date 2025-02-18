@@ -86,6 +86,9 @@ sudo apt -y install jq
 
 # prepare Zabbix application server
 
+zabbix_server --version | grep "$TARGET_SRV_VERSION"
+if [ "$?" -ne "0" ]; then
+
 SRV_VERSION_AVAILABLE=$(apt list -a zabbix-server-pgsql | grep "${TARGET_SRV_VERSION}" | grep -m1 -Eo "\S+:\S+" | head -1)
 echo "$SRV_VERSION_AVAILABLE"
 # check if variable is empty
@@ -95,6 +98,7 @@ else
 	sudo apt -y --allow-downgrades install zabbix-server-pgsql=${SRV_VERSION_AVAILABLE}
 fi
 
+fi
 
 
 CONF=/etc/zabbix/zabbix_server.conf
