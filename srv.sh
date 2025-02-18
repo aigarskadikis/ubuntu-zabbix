@@ -30,21 +30,21 @@ ZBX_WEBSERVICEURL="http://web.local.lan:10053/report"
 # Parse arguments
 while [[ "$#" -gt 0 ]]; do
     case $1 in
-        --DBHost=*)                                     DB_SERVER_HOST = "${1#*=}"; shift ;;
-        --DBPort=*)                                     DB_SERVER_PORT = "${1#*=}"; shift ;;
-        --DBPassword=*)                              POSTGRES_PASSWORD = "${1#*=}"; shift ;;
-        --DBUser=*)                                      POSTGRES_USER = "${1#*=}"; shift ;;
-        --DBName=*)                                        POSTGRES_DB = "${1#*=}"; shift ;;
-        --CacheSize=*)                                   ZBX_CACHESIZE = "${1#*=}"; shift ;;
-        --HANodeName=*)                                 ZBX_HANODENAME = "${1#*=}"; shift ;;
-        --HistoryCacheSize=*)                     ZBX_HISTORYCACHESIZE = "${1#*=}"; shift ;;
-        --HistoryIndexCacheSize=*)           ZBX_HISTORYINDEXCACHESIZE = "${1#*=}"; shift ;;
-        --NodeAddress=*)                               ZBX_NODEADDRESS = "${1#*=}"; shift ;;
-        --StartReportWriters=*)                 ZBX_STARTREPORTWRITERS = "${1#*=}"; shift ;;
-        --TrendCacheSize=*)                         ZBX_TRENDCACHESIZE = "${1#*=}"; shift ;;
-        --TrendFunctionCacheSize=*)         ZBX_TRENDFUNCTIONCACHESIZE = "${1#*=}"; shift ;;
-        --ValueCacheSize=*)                         ZBX_VALUECACHESIZE = "${1#*=}"; shift ;;
-        --WebServiceURL=*)                           ZBX_WEBSERVICEURL = "${1#*=}"; shift ;;
+        --DBHost=*)                                     DB_SERVER_HOST="${1#*=}"; shift ;;
+        --DBPort=*)                                     DB_SERVER_PORT="${1#*=}"; shift ;;
+        --DBPassword=*)                              POSTGRES_PASSWORD="${1#*=}"; shift ;;
+        --DBUser=*)                                      POSTGRES_USER="${1#*=}"; shift ;;
+        --DBName=*)                                        POSTGRES_DB="${1#*=}"; shift ;;
+        --CacheSize=*)                                   ZBX_CACHESIZE="${1#*=}"; shift ;;
+        --HANodeName=*)                                 ZBX_HANODENAME="${1#*=}"; shift ;;
+        --HistoryCacheSize=*)                     ZBX_HISTORYCACHESIZE="${1#*=}"; shift ;;
+        --HistoryIndexCacheSize=*)           ZBX_HISTORYINDEXCACHESIZE="${1#*=}"; shift ;;
+        --NodeAddress=*)                               ZBX_NODEADDRESS="${1#*=}"; shift ;;
+        --StartReportWriters=*)                 ZBX_STARTREPORTWRITERS="${1#*=}"; shift ;;
+        --TrendCacheSize=*)                         ZBX_TRENDCACHESIZE="${1#*=}"; shift ;;
+        --TrendFunctionCacheSize=*)         ZBX_TRENDFUNCTIONCACHESIZE="${1#*=}"; shift ;;
+        --ValueCacheSize=*)                         ZBX_VALUECACHESIZE="${1#*=}"; shift ;;
+        --WebServiceURL=*)                           ZBX_WEBSERVICEURL="${1#*=}"; shift ;;
         *) echo "Unknown parameter passed: $1"; exit 1 ;;
     esac
 done
