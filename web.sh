@@ -3,12 +3,6 @@
 # don't prompt for service restarts during "apt install"
 echo "\$nrconf{restart} = 'a';" | sudo tee /etc/needrestart/conf.d/no-prompt.conf
 
-DB_SERVER=""
-DB_PORT=""
-DB_DATABASE=""
-DB_USER=""
-DB_PASSWORD=""
-
 # pick up arguments
 while [[ "$#" -gt 0 ]]; do
     case $1 in
