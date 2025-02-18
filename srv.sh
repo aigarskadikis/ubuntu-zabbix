@@ -52,7 +52,7 @@ done
 
 # Set mandatory arguments
 if [[ -z "$DB_SERVER_HOST" || -z "$DB_SERVER_PORT" || -z "$POSTGRES_PASSWORD"  || -z "$POSTGRES_USER"  || -z "$POSTGRES_DB" ]]; then
-   echo "Usage: $0 --DBHost='db.local.lan' --DBPort='5432' --DBPassword='zabbix' --DBUser='zbx_srv' --DBName='zabbix'"
+   echo "Usage: $0 --DBHost='db.local.lan' --DBPort='5432' --DBPassword='zabbix' --DBUser='zabbix' --DBName='zabbix'"
    exit 1
 fi
 
@@ -94,6 +94,8 @@ if [ -z "$SRV_VERSION_AVAILABLE" ]; then
 else
 	sudo apt -y --allow-downgrades install zabbix-server-pgsql=${SRV_VERSION_AVAILABLE}
 fi
+
+
 
 CONF=/etc/zabbix/zabbix_server.conf
 
@@ -140,8 +142,24 @@ echo "NodeAddress=${ZBX_NODEADDRESS}" | sudo tee /etc/zabbix/zabbix_server.d/Nod
 
 fi
 
-# restart
+# if checksum file does not exist then create an empty one
+[[ ! -f /etc/zabbix/md5sum.zabbix_server.conf ]] && sudo touch /etc/zabbix/md5sum.zabbix_server.conf
+
+# validate current checksum
+MD5SUM_SRV_CONF=$(md5sum /etc/zabbix/zabbix_server.conf /etc/zabbix/zabbix_server.d/* | md5sum | grep -Eo "^\S+")
+
+# if checksum does not match with old 
+grep "$MD5SUM_SRV_CONF" /etc/zabbix/md5sum.zabbix_server.conf 
+if [ "$?" -ne "0" ]; then
+
+# restart service
 sudo systemctl restart zabbix-server
+
+# reinstall checksum
+echo "$MD5SUM_SRV_CONF" | sudo tee /etc/zabbix/md5sum.zabbix_server.conf
+
+fi
+
 
 # enable at startup
 sudo systemctl enable zabbix-server
