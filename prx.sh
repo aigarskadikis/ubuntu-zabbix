@@ -35,9 +35,15 @@ fi
 
 # refresh apt cache
 sudo apt update
+
+# list which versions of Zabbix packages are installed right now 
+APT_LIST_INSTALLED_ZABBIX=$(apt list --installed | grep zabbix)
+
 # prepare troubleshooting utilities. allow to fetch passive metrics. allow to deliver data on demand (via cronjob). JSON beautifier
 sudo apt -y install strace zabbix-get zabbix-sender jq tcpdump
 
+echo "${APT_LIST_INSTALLED_ZABBIX} | grep "zabbix-proxy-sqlite3.*${TARGET_PRX_VERSION}"
+if [ "$?" -ne "0" ]; then
 zabbix_proxy --version | grep "$TARGET_PRX_VERSION"
 if [ "$?" -ne "0" ]; then
 PRX_VERSION_AVAILABLE=$(apt list -a zabbix-proxy-sqlite3 | grep "${TARGET_PRX_VERSION}" | grep -m1 -Eo "\S+:\S+" | head -1)
@@ -48,7 +54,7 @@ if [ -z "$PRX_VERSION_AVAILABLE" ]; then
 else
 	sudo apt -y --allow-downgrades install zabbix-proxy-sqlite3=${PRX_VERSION_AVAILABLE}
 fi
-
+fi
 fi
 
 
@@ -102,6 +108,9 @@ Timeout=29
 grep -Eor ^[^#]+ /etc/zabbix/zabbix_proxy.conf /etc/zabbix/zabbix_proxy.d | sort
 
 
+# check if agent2 is on correct version
+echo "${APT_LIST_INSTALLED_ZABBIX} | grep "zabbix-agent2.*${TARGET_GNT_VERSION}"
+if [ "$?" -ne "0" ]; then
 # force agent2 to be on specific version
 GNT_VERSION_AVAILABLE=$(apt list -a zabbix-agent2 | grep "${TARGET_GNT_VERSION}" | grep -m1 -Eo "\S+:\S+" | head -1)
 # check if variable is empty
@@ -111,6 +120,8 @@ else
     # install Zabbix agent
 	sudo apt -y --allow-downgrades install zabbix-agent2=${GNT_VERSION_AVAILABLE}
 fi
+fi
+
 # delete static hostname
 sudo sed -i '/^Hostname=Zabbix server$/d' /etc/zabbix/zabbix_agent2.conf
 # set agent 2 to not use FQDN but a short hostname (same as reported behind 'hostname -s')
@@ -121,6 +132,8 @@ sudo systemctl restart zabbix-agent2
 sudo systemctl enable zabbix-agent2
 
 
+echo "${APT_LIST_INSTALLED_ZABBIX} | grep "zabbix-java-gateway.*${TARGET_JMX_VERSION}"
+if [ "$?" -ne "0" ]; then
 # force Zabbix Java Gateway to be on specific version
 JMX_VERSION_AVAILABLE=$(apt list -a zabbix-java-gateway | grep "${TARGET_JMX_VERSION}" | grep -m1 -Eo "\S+:\S+" | head -1)
 # check if variable is empty
@@ -128,7 +141,9 @@ if [ -z "$JMX_VERSION_AVAILABLE" ]; then
     echo "Version \"${JMX_VERSION_AVAILABLE}\" of zabbix-java-gateway is not available in apt cache"
 else
     # install Zabbix agent
+	apt list --installed | grep "
 	sudo apt -y --allow-downgrades install zabbix-java-gateway=${JMX_VERSION_AVAILABLE}
+fi
 fi
 # restart 
 sudo systemctl restart zabbix-java-gateway
