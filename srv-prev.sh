@@ -22,6 +22,7 @@ ZBX_TRENDFUNCTIONCACHESIZE="128M"
 ZBX_VALUECACHESIZE="512M"
 ZBX_WEBSERVICEURL="http://web.local.lan:10053/report"
 
+
 # Parse arguments
 while [[ "$#" -gt 0 ]]; do
     case $1 in
@@ -46,11 +47,13 @@ while [[ "$#" -gt 0 ]]; do
     esac
 done
 
+
 # Set mandatory arguments
-if [[ -z "$DB_SERVER_HOST" || -z "$DB_SERVER_PORT" || -z "$POSTGRES_PASSWORD" || -z "$POSTGRES_USER" || -z "$POSTGRES_DB" || -z "$TARGET_SRV_VERSION" || -z "$TARGET_GNT_VERSION" ]]; then
+if [[ -z "$DB_SERVER_HOST" || -z "$DB_SERVER_PORT" || -z "$POSTGRES_PASSWORD" || -z "$POSTGRES_USER" || -z "$POSTGRES_DB"  || -z "$TARGET_SRV_VERSION"  || -z "$TARGET_GNT_VERSION" ]]; then
    echo "Usage: $0 --DBHost='10.133.253.45' --DBPort='5432' --DBPassword='zabbix' --DBUser='zabbix' --DBName='zabbix' --TARGET_SRV_VERSION='7.2.3' --TARGET_GNT_VERSION='7.2.0'"
    exit 1
 fi
+
 
 # erase old repository
 rm -rf "/tmp/zabbix-release.dep"
@@ -67,10 +70,20 @@ rm -rf "/tmp/zabbix-release.dep"
 # update all packages in cache
 sudo apt update
 
-# prepare troubleshooting utilities, allow to fetch passive metrics, allow to deliver data on demand, JSON beautifier
-sudo apt -y install strace zabbix-get zabbix-sender jq
+# prepare troubleshooting utilities
+sudo apt -y install strace
 
-# prepare backend
+# allow to fetch passive metrics
+sudo apt -y install zabbix-get
+
+# allow to deliver data on demand (via cronjob)
+sudo apt -y install zabbix-sender
+
+# JSON beautifier 
+sudo apt -y install jq
+
+# prepare Zabbix application server
+
 zabbix_server --version | grep "$TARGET_SRV_VERSION"
 if [ "$?" -ne "0" ]; then
 
@@ -85,36 +98,45 @@ fi
 
 fi
 
+
 CONF=/etc/zabbix/zabbix_server.conf
 
 if [ -f "$CONF" ]; then
 
-# install settings in alphabetical order
-echo "
-CacheSize=${ZBX_CACHESIZE}
-DBHost=${DB_SERVER_HOST}
-DBName=${POSTGRES_DB}
-DBPassword=${POSTGRES_PASSWORD}
-DBPort=5432
-DBUser=${POSTGRES_USER}
-EnableGlobalScripts=0
-HistoryCacheSize=${ZBX_HISTORYCACHESIZE}
-HistoryIndexCacheSize=${ZBX_HISTORYINDEXCACHESIZE}
-Include=/etc/zabbix/zabbix_server.d/*.conf
-LogFile=/var/log/zabbix/zabbix_server.log
-LogFileSize=0
-LogSlowQueries=3000
-PidFile=/run/zabbix/zabbix_server.pid
-SNMPTrapperFile=/var/log/snmptrap/snmptrap.log
-SocketDir=/run/zabbix
-StartReportWriters=${ZBX_STARTREPORTWRITERS}
-StatsAllowedIP=127.0.0.1
-Timeout=30
-TrendCacheSize=${ZBX_TRENDCACHESIZE}
-TrendFunctionCacheSize=${ZBX_TRENDFUNCTIONCACHESIZE}
-ValueCacheSize=${ZBX_VALUECACHESIZE}
-WebServiceURL=${ZBX_WEBSERVICEURL}
-" | sudo tee "$CONF"
+# set certain settings to be maintainable
+grep ^CacheSize $CONF || sed -i "s|^# CacheSize=|CacheSize=|" $CONF
+grep ^DBHost $CONF || sed -i "s|^# DBHost=|DBHost=|" $CONF
+grep ^DBName $CONF || sed -i "s|^# DBName=|DBName=|" $CONF
+grep ^DBPassword $CONF || sed -i "s|^# DBPassword=|DBPassword=|" $CONF
+grep ^DBPort $CONF || sed -i "s|^# DBPort=|DBPort=|" $CONF
+grep ^DBUser $CONF || sed -i "s|^# DBUser=|DBUser=|" $CONF
+grep ^HistoryCacheSize $CONF || sed -i "s|^# HistoryCacheSize=|HistoryCacheSize=|" $CONF
+grep ^HistoryIndexCacheSize $CONF || sed -i "s|^# HistoryIndexCacheSize=|HistoryIndexCacheSize=|" $CONF
+grep ^StartReportWriters $CONF || sed -i "s|^# StartReportWriters=|StartReportWriters=|" $CONF
+grep ^TrendCacheSize $CONF || sed -i "s|^# TrendCacheSize=|TrendCacheSize=|" $CONF
+grep ^TrendFunctionCacheSize $CONF || sed -i "s|^# TrendFunctionCacheSize=|TrendFunctionCacheSize=|" $CONF
+grep ^ValueCacheSize $CONF || sed -i "s|^# ValueCacheSize=|ValueCacheSize=|" $CONF
+grep ^WebServiceURL $CONF || sed -i "s|^# WebServiceURL=|WebServiceURL=|" $CONF
+
+
+# force new values
+sudo sed -i "s|^CacheSize=.*|CacheSize=${ZBX_CACHESIZE}|" $CONF
+sudo sed -i "s|^DBHost=.*|DBHost=${DB_SERVER_HOST}|" $CONF
+sudo sed -i "s|^DBName=.*|DBName=${POSTGRES_DB}|" $CONF
+sudo sed -i "s|^DBPassword=.*|DBPassword=${POSTGRES_PASSWORD}|" $CONF
+sudo sed -i "s|^DBPort=.*|DBPort=${DB_SERVER_PORT}|" $CONF
+sudo sed -i "s|^DBUser=.*|DBUser=${POSTGRES_USER}|" $CONF
+sudo sed -i "s|^HistoryCacheSize=.*|HistoryCacheSize=${ZBX_HISTORYCACHESIZE}|" $CONF
+sudo sed -i "s|^HistoryIndexCacheSize=.*|HistoryIndexCacheSize=${ZBX_HISTORYINDEXCACHESIZE}|" $CONF
+sudo sed -i "s|^StartReportWriters=.*|StartReportWriters=${ZBX_STARTREPORTWRITERS}|" $CONF
+sudo sed -i "s|^TrendCacheSize=.*|TrendCacheSize=${ZBX_TRENDCACHESIZE}|" $CONF
+sudo sed -i "s|^TrendFunctionCacheSize=.*|TrendFunctionCacheSize=${ZBX_TRENDFUNCTIONCACHESIZE}|" $CONF
+sudo sed -i "s|^ValueCacheSize=.*|ValueCacheSize=${ZBX_VALUECACHESIZE}|" $CONF
+sudo sed -i "s|^WebServiceURL=.*|WebServiceURL=${ZBX_WEBSERVICEURL}|" $CONF
+
+# enable Include
+sudo mkdir -p /etc/zabbix/zabbix_server.d
+grep ^Include /etc/zabbix/zabbix_server.conf || echo 'Include=/etc/zabbix/zabbix_server.d' | sudo tee --append /etc/zabbix/zabbix_server.conf
 
 # install uniqueness per servers (this will allow to keep checksum of zabbix_server.conf the same between active/standby nodes
 echo "HANodeName=${ZBX_HANODENAME}" | sudo tee /etc/zabbix/zabbix_server.d/HANodeName.conf
@@ -140,8 +162,10 @@ echo "$MD5SUM_SRV_CONF" | sudo tee /etc/zabbix/md5sum.zabbix_server.conf
 
 fi
 
+
 # enable at startup
 sudo systemctl enable zabbix-server
+
 
 # print current configuration:
 grep -Eor ^[^#]+ /etc/zabbix/zabbix_server.conf /etc/zabbix/zabbix_server.d | sort
@@ -155,11 +179,15 @@ else
     # install Zabbix agent
 	sudo apt -y --allow-downgrades install zabbix-agent2=${GNT_VERSION_AVAILABLE}
 fi
+
 # delete static hostname
 sudo sed -i '/^Hostname=Zabbix server$/d' /etc/zabbix/zabbix_agent2.conf
+
 # set agent 2 to not use FQDN but a short hostname (same as reported behind 'hostname -s')
 sudo sed -i "s|^.*HostnameItem=.*|HostnameItem=system.hostname[shorthost]|" /etc/zabbix/zabbix_agent2.conf
+
 # restart 
 sudo systemctl restart zabbix-agent2
+
 # enable at startup
 sudo systemctl enable zabbix-agent2

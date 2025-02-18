@@ -1,9 +1,28 @@
 #!/usr/bin/env bash
 
 # DB name, user, password
-ZBX_DB="zabbix"
-ZBX_USER="zabbix"
-ZBX_PASS="$(< /dev/urandom tr -dc A-Za-z0-9 | head -c${1:-24};echo;)"
+POSTGRES_DB="zabbix"
+POSTGRES_USER="zabbix"
+POSTGRES_PASSWORD="$(< /dev/urandom tr -dc A-Za-z0-9 | head -c${1:-24};echo;)"
+
+
+
+while [[ "$#" -gt 0 ]]; do
+    case $1 in
+        --DB_SERVER_HOST=*)        DB_SERVER_HOST="${1#*=}"; shift ;;
+        --DB_SERVER_PORT=*)        DB_SERVER_PORT="${1#*=}"; shift ;;
+        --POSTGRES_DB=*)              POSTGRES_DB="${1#*=}"; shift ;;
+        --POSTGRES_PASSWORD=*)  POSTGRES_PASSWORD="${1#*=}"; shift ;;
+        --POSTGRES_USER=*)          POSTGRES_USER="${1#*=}"; shift ;;
+        *) echo "Unknown parameter passed: $1"; exit 1 ;;
+    esac
+done
+
+if [[ -z "$DB_SERVER_HOST" || -z "$DB_SERVER_PORT" || -z "$POSTGRES_DB" || -z "$POSTGRES_PASSWORD" || -z "$POSTGRES_USER" ]]; then
+   echo "Usage: $0 --DB_SERVER_HOST='10.133.253.45' --DB_SERVER_PORT='5432' --POSTGRES_DB='zabbix' --POSTGRES_USER='zabbix' --POSTGRES_PASSWORD='zabbix'"
+   exit 1
+fi
+
 
 # don't prompt for service restarts during "apt install"
 echo "\$nrconf{restart} = 'a';" | sudo tee /etc/needrestart/conf.d/no-prompt.conf
@@ -49,10 +68,11 @@ sudo -u postgres psql -c "CREATE USER ZBX_USER WITH PASSWORD '${ZBX_PASS}';"
 
 sudo -u postgres sudo -u postgres createdb -O zabbix zabbix
 
+
+
 # dedicated user for application layer
+# psql postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${DB_SERVER_HOST}:${DB_SERVER_PORT} -c 'CREATE DATABASE ${POSTGRES_DB} WITH OWNER = ${POSTGRES_USER};'
 
-
-
-
+# [[ ${seed_db} = true ]] && zcat /usr/share/zabbix-sql-scripts/postgresql/server.sql.gz | sudo -u zabbix psql postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${DB_SERVER_HOST}:${DB_SERVER_PORT}/zabbix
 
 
