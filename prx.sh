@@ -95,7 +95,7 @@ PidFile=/run/zabbix/zabbix_proxy.pid
 ProxyBufferMode=hybrid
 ProxyMemoryBufferSize=160M
 ProxyMode=1
-Server=127.0.0.1
+Server=${ZBX_SERVER_HOST}
 SocketDir=/run/zabbix
 StatsAllowedIP=127.0.0.1
 TLSAccept=psk
@@ -106,6 +106,24 @@ Timeout=29
 " | sudo tee /etc/zabbix/zabbix_proxy.conf
 
 grep -Eor ^[^#]+ /etc/zabbix/zabbix_proxy.conf /etc/zabbix/zabbix_proxy.d | sort
+
+# if checksum file does not exist then create an empty one
+[[ ! -f /etc/zabbix/md5sum.zabbix_proxy.conf ]] && sudo touch /etc/zabbix/md5sum.zabbix_proxy.conf
+
+# validate current checksum
+MD5SUM_PRX_CONF=$(md5sum /etc/zabbix/zabbix_proxy.conf /etc/zabbix/zabbix_proxy.d/* | md5sum | grep -Eo "^\S+")
+
+# if checksum does not match with old 
+grep "$MD5SUM_PRX_CONF" /etc/zabbix/md5sum.zabbix_proxy.conf 
+if [ "$?" -ne "0" ]; then
+
+# restart service
+sudo systemctl restart zabbix-proxy
+
+# reinstall checksum
+echo "$MD5SUM_PRX_CONF" | sudo tee /etc/zabbix/md5sum.zabbix_proxy.conf
+
+fi
 
 
 # check if agent2 is on correct version
@@ -153,8 +171,12 @@ sudo systemctl enable zabbix-java-gateway
 # proxy, agent, gateway must be in listening state
 ss --tcp --listen --numeric | grep -E "(10051|10050|10052)"
 
+# query PostgreSQL ODBC support (from stock Ubuntu repository)
+echo "${APT_LIST_INSTALLED}" | grep "odbc-postgresql"
+if [ "$?" -ne "0" ]; then
 # setup ODBC driver for PostgreSQL
 sudo apt -y install odbc-postgresql
+fi
 
 
 echo "${APT_LIST_INSTALLED}" | grep "mssql-tools18"
