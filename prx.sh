@@ -22,19 +22,21 @@ if [[ -z "$ZBX_SERVER_HOST" || -z "$TARGET_PRX_VERSION" || -z "$TARGET_GNT_VERSI
    exit 1
 fi
 
-
-
+# check existence of repository
+apt list -a zabbix-proxy-sqlite3 | grep ":7.2"
+if [ "$?" -ne "0" ]; then
 # erase old repository
 rm -rf "/tmp/zabbix-release.dep"
 # download desired zabbix repository
 curl https://repo.zabbix.com/zabbix/7.2/release/ubuntu/pool/main/z/zabbix-release/zabbix-release_latest_7.2+ubuntu22.04_all.deb -o /tmp/zabbix-release.dep
 # install
 sudo dpkg -i /tmp/zabbix-release.dep && rm -rf "/tmp/zabbix-release.dep"
-# update apt cache
+fi
+
+# refresh apt cache
 sudo apt update
 # prepare troubleshooting utilities. allow to fetch passive metrics. allow to deliver data on demand (via cronjob). JSON beautifier
-sudo apt -y install strace zabbix-get zabbix-sender jq
-
+sudo apt -y install strace zabbix-get zabbix-sender jq tcpdump
 
 zabbix_proxy --version | grep "$TARGET_PRX_VERSION"
 if [ "$?" -ne "0" ]; then
