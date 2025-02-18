@@ -17,7 +17,7 @@ while [[ "$#" -gt 0 ]]; do
 done
 
 if [[ -z "$ZBX_SERVER_HOST" || -z "$TARGET_PRX_VERSION" || -z "$TARGET_GNT_VERSION" || -z "$TARGET_JMX_VERSION" ]]; then
-   echo "Usage: $0 --ZBX_SERVER_HOST='10.133.253.44' --TARGET_PRX_VERSION='7.2.3' --TARGET_GNT_VERSION='7.2.0' --TARGET_JMX_VERSION='7.2.0'"
+   echo "Usage: $0 --ZBX_SERVER_HOST='10.133.253.44' --TARGET_PRX_VERSION='7.2.3' --TARGET_GNT_VERSION='7.2.3' --TARGET_JMX_VERSION='7.2.3'"
    exit 1
 fi
 
@@ -93,7 +93,7 @@ LogSlowQueries=3000
 PidFile=/run/zabbix/zabbix_proxy.pid
 ProxyBufferMode=hybrid
 ProxyMemoryBufferSize=160M
-ProxyMode=1
+ProxyMode=0
 Server=${ZBX_SERVER_HOST}
 SocketDir=/run/zabbix
 StatsAllowedIP=127.0.0.1
@@ -110,7 +110,7 @@ grep -Eor ^[^#]+ /etc/zabbix/zabbix_proxy.conf /etc/zabbix/zabbix_proxy.d | sort
 [[ ! -f /etc/zabbix/md5sum.zabbix_proxy.conf ]] && sudo touch /etc/zabbix/md5sum.zabbix_proxy.conf
 
 # validate current checksum
-MD5SUM_PRX_CONF=$(md5sum /etc/zabbix/zabbix_proxy.conf /etc/zabbix/zabbix_proxy.d/* | md5sum | grep -Eo "^\S+")
+MD5SUM_PRX_CONF=$(md5sum /etc/zabbix/zabbix_proxy.conf | md5sum | grep -Eo "^\S+")
 
 # if checksum does not match with old 
 grep "$MD5SUM_PRX_CONF" /etc/zabbix/md5sum.zabbix_proxy.conf 
