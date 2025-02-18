@@ -42,7 +42,7 @@ APT_LIST_INSTALLED_ZABBIX=$(apt list --installed | grep zabbix)
 # prepare troubleshooting utilities. allow to fetch passive metrics. allow to deliver data on demand (via cronjob). JSON beautifier
 sudo apt -y install strace zabbix-get zabbix-sender jq tcpdump
 
-echo "${APT_LIST_INSTALLED_ZABBIX} | grep "zabbix-proxy-sqlite3.*${TARGET_PRX_VERSION}"
+echo "${APT_LIST_INSTALLED_ZABBIX}" | grep "zabbix-proxy-sqlite3.*${TARGET_PRX_VERSION}"
 if [ "$?" -ne "0" ]; then
 zabbix_proxy --version | grep "$TARGET_PRX_VERSION"
 if [ "$?" -ne "0" ]; then
@@ -109,7 +109,7 @@ grep -Eor ^[^#]+ /etc/zabbix/zabbix_proxy.conf /etc/zabbix/zabbix_proxy.d | sort
 
 
 # check if agent2 is on correct version
-echo "${APT_LIST_INSTALLED_ZABBIX} | grep "zabbix-agent2.*${TARGET_GNT_VERSION}"
+echo "${APT_LIST_INSTALLED_ZABBIX}" | grep "zabbix-agent2.*${TARGET_GNT_VERSION}"
 if [ "$?" -ne "0" ]; then
 # force agent2 to be on specific version
 GNT_VERSION_AVAILABLE=$(apt list -a zabbix-agent2 | grep "${TARGET_GNT_VERSION}" | grep -m1 -Eo "\S+:\S+" | head -1)
@@ -132,7 +132,7 @@ sudo systemctl restart zabbix-agent2
 sudo systemctl enable zabbix-agent2
 
 
-echo "${APT_LIST_INSTALLED_ZABBIX} | grep "zabbix-java-gateway.*${TARGET_JMX_VERSION}"
+echo "${APT_LIST_INSTALLED_ZABBIX}" | grep "zabbix-java-gateway.*${TARGET_JMX_VERSION}"
 if [ "$?" -ne "0" ]; then
 # force Zabbix Java Gateway to be on specific version
 JMX_VERSION_AVAILABLE=$(apt list -a zabbix-java-gateway | grep "${TARGET_JMX_VERSION}" | grep -m1 -Eo "\S+:\S+" | head -1)
