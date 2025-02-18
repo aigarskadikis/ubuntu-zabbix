@@ -124,6 +124,10 @@ echo "$MD5SUM_PRX_CONF" | sudo tee /etc/zabbix/md5sum.zabbix_proxy.conf
 
 fi
 
+# enable at startup
+sudo systemctl enable zabbix-proxy
+
+
 
 # check if agent2 is on correct version
 echo "${APT_LIST_INSTALLED}" | grep "zabbix-agent2.*${TARGET_GNT_VERSION}"
@@ -205,15 +209,16 @@ sudo apt-get -y install unzip
 curl https://download.oracle.com/otn_software/linux/instantclient/2370000/instantclient-basic-linux.x64-23.7.0.25.01.zip \
 -o /tmp/instantclient-basic-linux.x64-23.7.0.25.01.zip
 
-curl https://download.oracle.com/otn_software/linux/instantclient/2370000/instantclient-sdk-linux.x64-23.7.0.25.01.zip \
--o /tmp/instantclient-sdk-linux.x64-23.7.0.25.01.zip
+curl https://download.oracle.com/otn_software/linux/instantclient/2370000/instantclient-odbc-linux.x64-23.7.0.25.01.zip \
+-o /tmp/instantclient-odbc-linux.x64-23.7.0.25.01.zip
 
 mkdir -p /opt/oracle
 cd /opt/oracle
-mv /tmp/instantclient* .
+mv /tmp/instantclient-basic-linux.x64-23.7.0.25.01.zip .
+mv /tmp/instantclient-odbc-linux.x64-23.7.0.25.01.zip .
 
-unzip instantclient-basic-linux.x64-23.7.0.25.01.zip
-unzip instantclient-sdk-linux.x64-23.7.0.25.01.zip
+unzip -o instantclient-basic-linux.x64-23.7.0.25.01.zip
+unzip -o instantclient-odbc-linux.x64-23.7.0.25.01.zip
 mv *.zip /tmp
 cd /opt/oracle/instantclient_23_7
 
@@ -228,5 +233,6 @@ sudo ldconfig
 # this should print libraries recognized by OS
 sudo ldconfig -p | grep oracle
 fi
+
 
 
