@@ -141,10 +141,10 @@ if [ -z "$JMX_VERSION_AVAILABLE" ]; then
     echo "Version \"${JMX_VERSION_AVAILABLE}\" of zabbix-java-gateway is not available in apt cache"
 else
     # install Zabbix agent
-	apt list --installed | grep "
 	sudo apt -y --allow-downgrades install zabbix-java-gateway=${JMX_VERSION_AVAILABLE}
 fi
 fi
+
 # restart 
 sudo systemctl restart zabbix-java-gateway
 # enable at startup
