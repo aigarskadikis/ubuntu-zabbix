@@ -12,11 +12,11 @@ DB_PASSWORD=""
 # pick up arguments
 while [[ "$#" -gt 0 ]]; do
     case $1 in
-        --DB_SERVER=*) DB_SERVER = "${1#*=}"; shift ;;
-        --DB_PORT=*) DB_PORT = "${1#*=}"; shift ;;
-        --DB_DATABASE=*) DB_DATABASE = "${1#*=}"; shift ;;
-        --DB_USER=*) DB_USER = "${1#*=}"; shift ;;
-        --DB_PASSWORD=*) DB_PASSWORD = "${1#*=}"; shift ;;
+        --dbserver=*) DB_SERVER = "${1#*=}"; shift ;;
+        --dbport=*) DB_PORT = "${1#*=}"; shift ;;
+        --dbname=*) DB_DATABASE = "${1#*=}"; shift ;;
+        --dbuser=*) DB_USER = "${1#*=}"; shift ;;
+        --dbpassword=*) DB_PASSWORD = "${1#*=}"; shift ;;
         *) echo "Unknown parameter passed: $1"; exit 1 ;;
     esac
 done
