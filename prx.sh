@@ -37,12 +37,12 @@ fi
 sudo apt update
 
 # list which versions of Zabbix packages are installed right now 
-APT_LIST_INSTALLED_ZABBIX=$(apt list --installed | grep zabbix)
+APT_LIST_INSTALLED=$(apt list --installed)
 
 # prepare troubleshooting utilities. allow to fetch passive metrics. allow to deliver data on demand (via cronjob). JSON beautifier
 sudo apt -y install strace zabbix-get zabbix-sender jq tcpdump
 
-echo "${APT_LIST_INSTALLED_ZABBIX}" | grep "zabbix-proxy-sqlite3.*${TARGET_PRX_VERSION}"
+echo "${APT_LIST_INSTALLED}" | grep "zabbix-proxy-sqlite3.*${TARGET_PRX_VERSION}"
 if [ "$?" -ne "0" ]; then
 zabbix_proxy --version | grep "$TARGET_PRX_VERSION"
 if [ "$?" -ne "0" ]; then
@@ -109,7 +109,7 @@ grep -Eor ^[^#]+ /etc/zabbix/zabbix_proxy.conf /etc/zabbix/zabbix_proxy.d | sort
 
 
 # check if agent2 is on correct version
-echo "${APT_LIST_INSTALLED_ZABBIX}" | grep "zabbix-agent2.*${TARGET_GNT_VERSION}"
+echo "${APT_LIST_INSTALLED}" | grep "zabbix-agent2.*${TARGET_GNT_VERSION}"
 if [ "$?" -ne "0" ]; then
 # force agent2 to be on specific version
 GNT_VERSION_AVAILABLE=$(apt list -a zabbix-agent2 | grep "${TARGET_GNT_VERSION}" | grep -m1 -Eo "\S+:\S+" | head -1)
@@ -132,7 +132,7 @@ sudo systemctl restart zabbix-agent2
 sudo systemctl enable zabbix-agent2
 
 
-echo "${APT_LIST_INSTALLED_ZABBIX}" | grep "zabbix-java-gateway.*${TARGET_JMX_VERSION}"
+echo "${APT_LIST_INSTALLED}" | grep "zabbix-java-gateway.*${TARGET_JMX_VERSION}"
 if [ "$?" -ne "0" ]; then
 # force Zabbix Java Gateway to be on specific version
 JMX_VERSION_AVAILABLE=$(apt list -a zabbix-java-gateway | grep "${TARGET_JMX_VERSION}" | grep -m1 -Eo "\S+:\S+" | head -1)
@@ -156,15 +156,17 @@ ss --tcp --listen --numeric | grep -E "(10051|10050|10052)"
 # setup ODBC driver for PostgreSQL
 sudo apt -y install odbc-postgresql
 
-# install MS SQL ODBC
+
+echo "${APT_LIST_INSTALLED}" | grep "mssql-tools18"
+if [ "$?" -ne "0" ]; then
+# install MS SQL ODBC. https://learn.microsoft.com/en-us/sql/connect/odbc/linux-mac/installing-the-microsoft-odbc-driver-for-sql-server?view=sql-server-ver16&tabs=ubuntu18-install%2Calpine17-install%2Cdebian8-install%2Credhat7-13-install%2Crhel7-offline
 # Download the package to configure the Microsoft repo
 curl -sSL -O https://packages.microsoft.com/config/ubuntu/$(grep VERSION_ID /etc/os-release | cut -d '"' -f 2)/packages-microsoft-prod.deb
 # Install the package
 sudo dpkg -i packages-microsoft-prod.deb
 # Delete the file
 rm packages-microsoft-prod.deb
-
-# Install the driver
+# Install the ODBC driver
 sudo apt-get update
 sudo ACCEPT_EULA=Y apt-get install -y msodbcsql18
 # optional: for bcp and sqlcmd
@@ -173,3 +175,37 @@ echo 'export PATH="$PATH:/opt/mssql-tools18/bin"' >> ~/.bashrc
 source ~/.bashrc
 # optional: for unixODBC development headers
 sudo apt-get install -y unixodbc-dev
+fi
+
+sudo ldconfig -p | grep oracle
+if [ "$?" -ne "0" ]; then
+
+sudo apt-get -y install unzip
+curl https://download.oracle.com/otn_software/linux/instantclient/2370000/instantclient-basic-linux.x64-23.7.0.25.01.zip \
+-o /tmp/instantclient-basic-linux.x64-23.7.0.25.01.zip
+
+curl https://download.oracle.com/otn_software/linux/instantclient/2370000/instantclient-sdk-linux.x64-23.7.0.25.01.zip \
+-o /tmp/instantclient-sdk-linux.x64-23.7.0.25.01.zip
+
+mkdir -p /opt/oracle
+cd /opt/oracle
+mv /tmp/instantclient* .
+
+unzip instantclient-basic-linux.x64-23.7.0.25.01.zip
+unzip instantclient-sdk-linux.x64-23.7.0.25.01.zip
+mv *.zip /tmp
+cd /opt/oracle/instantclient_23_7
+
+echo "${PWD}"> /etc/ld.so.conf.d/oracle-instantclient.conf
+
+# this should print nothing:
+sudo ldconfig -p | grep oracle
+
+# install refresh ldpath
+sudo ldconfig
+
+# this should print libraries recognized by OS
+sudo ldconfig -p | grep oracle
+fi
+
+
