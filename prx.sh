@@ -16,7 +16,6 @@ while [[ "$#" -gt 0 ]]; do
     esac
 done
 
-
 if [[ -z "$ZBX_SERVER_HOST" || -z "$TARGET_PRX_VERSION" || -z "$TARGET_GNT_VERSION" || -z "$TARGET_JMX_VERSION" ]]; then
    echo "Usage: $0 --ZBX_SERVER_HOST='10.133.253.44' --TARGET_PRX_VERSION='7.2.3' --TARGET_GNT_VERSION='7.2.0' --TARGET_JMX_VERSION='7.2.0'"
    exit 1
