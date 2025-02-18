@@ -18,7 +18,7 @@ done
 
 
 if [[ -z "$DB_SERVER_HOST" || -z "$DB_SERVER_PORT" || -z "$POSTGRES_PASSWORD" || -z "$POSTGRES_USER" || -z "$POSTGRES_DB" || -z "$TARGET_PRX_VERSION" || -z "$TARGET_GNT_VERSION" ]]; then
-   echo "Usage: $0 --ZBX_SERVER_HOST='10.133.253.44' --TARGET_PRX_VERSION='7.2.3' --TARGET_GNT_VERSION='7.2.0' --TARGET_GMX_VERSION='7.2.0'"
+   echo "Usage: $0 --ZBX_SERVER_HOST='10.133.253.44' --TARGET_PRX_VERSION='7.2.3' --TARGET_GNT_VERSION='7.2.0' --TARGET_JMX_VERSION='7.2.0'"
    exit 1
 fi
 
@@ -135,3 +135,4 @@ sudo systemctl enable zabbix-java-gateway
 
 # proxy, agent, gateway must be in listening state
 ss --tcp --listen --numeric | grep -E "(10051|10050|10052)"
+
