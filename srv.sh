@@ -3,10 +3,6 @@
 # don't prompt for service restarts during "apt install"
 echo "\$nrconf{restart} = 'a';" | sudo tee /etc/needrestart/conf.d/no-prompt.conf
 
-# upgrade/downgrade to specific versions
-TARGET_SRV_VERSION=7.2.2
-TARGET_GNT_VERSION=7.2.2
-
 # stealing naming from docker containers at 
 # https://hub.docker.com/r/zabbix/zabbix-server-pgsql
 # default zabbix_server.conf values:
@@ -45,14 +41,16 @@ while [[ "$#" -gt 0 ]]; do
         --TrendFunctionCacheSize=*)         ZBX_TRENDFUNCTIONCACHESIZE="${1#*=}"; shift ;;
         --ValueCacheSize=*)                         ZBX_VALUECACHESIZE="${1#*=}"; shift ;;
         --WebServiceURL=*)                           ZBX_WEBSERVICEURL="${1#*=}"; shift ;;
+        --TARGET_SRV_VERSION=*)                     TARGET_SRV_VERSION="${1#*=}"; shift ;;
+        --TARGET_GNT_VERSION=*)                     TARGET_GNT_VERSION="${1#*=}"; shift ;;
         *) echo "Unknown parameter passed: $1"; exit 1 ;;
     esac
 done
 
 
 # Set mandatory arguments
-if [[ -z "$DB_SERVER_HOST" || -z "$DB_SERVER_PORT" || -z "$POSTGRES_PASSWORD"  || -z "$POSTGRES_USER"  || -z "$POSTGRES_DB" ]]; then
-   echo "Usage: $0 --DBHost='db.local.lan' --DBPort='5432' --DBPassword='zabbix' --DBUser='zabbix' --DBName='zabbix'"
+if [[ -z "$DB_SERVER_HOST" || -z "$DB_SERVER_PORT" || -z "$POSTGRES_PASSWORD" || -z "$POSTGRES_USER" || -z "$POSTGRES_DB"  || -z "$TARGET_SRV_VERSION"  || -z "$TARGET_GNT_VERSION" ]]; then
+   echo "Usage: $0 --DBHost='10.133.253.45' --DBPort='5432' --DBPassword='zabbix' --DBUser='zabbix' --DBName='zabbix' --TARGET_SRV_VERSION='7.2.3' --TARGET_GNT_VERSION='7.2.0'"
    exit 1
 fi
 
