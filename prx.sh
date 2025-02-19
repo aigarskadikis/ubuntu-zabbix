@@ -35,7 +35,7 @@ fi
 # refresh apt cache
 sudo apt update
 
-# list which versions of Zabbix packages are installed right now 
+# list of installed packages 
 APT_LIST_INSTALLED=$(apt list --installed)
 
 # prepare troubleshooting utilities. allow to fetch passive metrics. allow to deliver data on demand (via cronjob). JSON beautifier
@@ -51,7 +51,7 @@ echo "$PRX_VERSION_AVAILABLE"
 if [ -z "$PRX_VERSION_AVAILABLE" ]; then
     echo "Version \"${TARGET_PRX_VERSION}\" of \"zabbix-proxy-sqlite3\" is not available in apt cache"
 else
-	sudo apt -y --allow-downgrades install zabbix-proxy-sqlite3=${PRX_VERSION_AVAILABLE}
+    zabbix_proxy --version | grep "$TARGET_PRX_VERSION" || sudo apt -y --allow-downgrades install zabbix-proxy-sqlite3=${PRX_VERSION_AVAILABLE}
 fi
 fi
 fi
@@ -139,10 +139,9 @@ if [ -z "$GNT_VERSION_AVAILABLE" ]; then
     echo "Version \"${GNT_VERSION_AVAILABLE}\" of zabbix-agent2 is not available in apt cache"
 else
     # install Zabbix agent
-	sudo apt -y --allow-downgrades install zabbix-agent2=${GNT_VERSION_AVAILABLE}
+	zabbix_agent2 --version | grep "${TARGET_GNT_VERSION}" || sudo apt -y --allow-downgrades install zabbix-agent2=${GNT_VERSION_AVAILABLE}
 fi
 fi
-
 # delete static hostname
 sudo sed -i '/^Hostname=Zabbix server$/d' /etc/zabbix/zabbix_agent2.conf
 # set agent 2 to not use FQDN but a short hostname (same as reported behind 'hostname -s')
@@ -212,17 +211,22 @@ curl https://download.oracle.com/otn_software/linux/instantclient/2370000/instan
 curl https://download.oracle.com/otn_software/linux/instantclient/2370000/instantclient-odbc-linux.x64-23.7.0.25.01.zip \
 -o /tmp/instantclient-odbc-linux.x64-23.7.0.25.01.zip
 
-mkdir -p /opt/oracle
-cd /opt/oracle
-mv /tmp/instantclient-basic-linux.x64-23.7.0.25.01.zip .
-mv /tmp/instantclient-odbc-linux.x64-23.7.0.25.01.zip .
+curl https://download.oracle.com/otn_software/linux/instantclient/2370000/instantclient-sqlplus-linux.x64-23.7.0.25.01.zip \
+-o /tmp/instantclient-sqlplus-linux.x64-23.7.0.25.01.zip
 
-unzip -o instantclient-basic-linux.x64-23.7.0.25.01.zip
-unzip -o instantclient-odbc-linux.x64-23.7.0.25.01.zip
-mv *.zip /tmp
+
+sudo mkdir -p /opt/oracle
+cd /opt/oracle
+sudo mv /tmp/instantclient-basic-linux.x64-23.7.0.25.01.zip .
+sudo mv /tmp/instantclient-odbc-linux.x64-23.7.0.25.01.zip .
+sudo mv /tmp/instantclient-sqlplus-linux.x64-23.7.0.25.01.zip .
+
+sudo unzip -o instantclient-basic-linux.x64-23.7.0.25.01.zip
+sudo unzip -o instantclient-odbc-linux.x64-23.7.0.25.01.zip
+sudo mv *.zip /tmp
 cd /opt/oracle/instantclient_23_7
 
-echo "${PWD}"> /etc/ld.so.conf.d/oracle-instantclient.conf
+echo "${PWD}" | sudo tee /etc/ld.so.conf.d/oracle-instantclient.conf
 
 # this should print nothing:
 sudo ldconfig -p | grep oracle

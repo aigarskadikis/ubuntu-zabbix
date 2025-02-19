@@ -3,6 +3,12 @@
 # don't prompt for service restarts during "apt install"
 echo "\$nrconf{restart} = 'a';" | sudo tee /etc/needrestart/conf.d/no-prompt.conf
 
+DB_SERVER=10.133.112.87
+DB_PORT=5432
+DB_DATABASE=zabbix
+DB_USER=zabbix
+DB_PASSWORD=zabbix
+
 # pick up arguments
 while [[ "$#" -gt 0 ]]; do
     case $1 in

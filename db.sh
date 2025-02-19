@@ -24,6 +24,7 @@ if [[ -z "$DB_SERVER_HOST" || -z "$DB_SERVER_PORT" || -z "$POSTGRES_DB" || -z "$
 fi
 
 
+
 # don't prompt for service restarts during "apt install"
 echo "\$nrconf{restart} = 'a';" | sudo tee /etc/needrestart/conf.d/no-prompt.conf
 
@@ -34,7 +35,6 @@ sudo curl -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc --fail htt
 sudo sh -c 'echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
 sudo apt update
 sudo apt -y install postgresql-client-17
-# sudo apt -y install postgresql-17
 
 # erase old repository
 rm -rf "/tmp/zabbix-release.dep"
