@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+# to simulate script with system which has less than 1GM of RAM execute:
 # sudo dd if=/dev/zero of=/myswap1 bs=1M count=1024 && sudo chown root:root /myswap1 && sudo chmod 0600 /myswap1 && sudo mkswap /myswap1 && sudo swapon /myswap1 && free -m && sudo dd if=/dev/zero of=/myswap2 bs=1M count=1024 && sudo chown root:root /myswap2 && sudo chmod 0600 /myswap2 && sudo mkswap /myswap2 && sudo swapon /myswap2 && free -m && echo 1 | sudo tee /proc/sys/vm/overcommit_memory
 
 # don't prompt for service restarts during "apt install"
@@ -17,11 +18,13 @@ while [[ "$#" -gt 0 ]]; do
     esac
 done
 
+
 if [[ -z "$ZBX_SERVER_HOST" || -z "$TARGET_ZABBIX_PROXY" || -z "$TARGET_ZABBIX_AGENT2" || -z "$TARGET_ZABBIX_JAVA_GATEWAY" ]]; then
    echo "Usage:"
    echo "$0 --ZBX_SERVER_HOST='10.133.253.44' --TARGET_ZABBIX_PROXY='7.2.3' --TARGET_ZABBIX_AGENT2='7.2.3' --TARGET_ZABBIX_JAVA_GATEWAY='7.2.3' --PSK='7e26ebf6fcb6770d3827b6e59701387eab92e2a0e21669b0013b22fdf33754c4'"
    exit 1
 fi
+
 
 # check existence of repository
 dpkg-query --showformat='${Version}' --show zabbix-release
@@ -35,6 +38,7 @@ sudo dpkg -i /tmp/zabbix-release.dep && rm -rf "/tmp/zabbix-release.dep"
 fi
 
 
+# Microsoft repository
 dpkg-query --showformat='${Version}' --show packages-microsoft-prod
 if [ "$?" -ne "0" ]; then
 curl -sSL -O https://packages.microsoft.com/config/ubuntu/$(grep VERSION_ID /etc/os-release | cut -d '"' -f 2)/packages-microsoft-prod.deb
@@ -70,9 +74,6 @@ mkdir -p /var/lib/zabbix
 
 # enable include for exceptions. will be required only for special occasions when proxy have bigger load
 mkdir -p /etc/zabbix/zabbix_proxy.d
-
-# dependencies to setup PSK
-sudo apt -y install openssl
 
 # if PSK has been never configured, then install one
 echo "${PSK}" | sudo tee /var/lib/zabbix/.key.psk
@@ -128,7 +129,8 @@ sudo systemctl restart zabbix-proxy
 echo "$MD5SUM_ZABBIX_PROXY_CONF" | sudo tee /etc/zabbix/md5sum.zabbix_proxy.conf
 fi
 
-# check if installed version match desired version
+
+# Zabbix Java Gateway
 dpkg-query --showformat='${Version}' --show zabbix-java-gateway | grep -P "^1:${TARGET_ZABBIX_JAVA_GATEWAY}"
 if [ "$?" -ne "0" ]; then
 # observe if desired is available
@@ -194,8 +196,6 @@ sudo systemctl restart zabbix-agent2
 echo "$MD5SUM_ZABBIX_AGENT2_CONF" | sudo tee /etc/zabbix/md5sum.zabbix_agent2.conf
 fi
 
-# proxy, agent, gateway must be in listening state
-ss --tcp --listen --numeric | grep -E "(10051|10050|10052)"
 
 # query PostgreSQL ODBC support (from stock Ubuntu repository)
 dpkg-query --showformat='${Version}' --show odbc-postgresql
@@ -204,6 +204,8 @@ if [ "$?" -ne "0" ]; then
 sudo apt-get -y install odbc-postgresql
 fi
 
+
+# MSSQL ODBC
 dpkg-query --showformat='${Version}' --show "mssql-tools18"
 if [ "$?" -ne "0" ]; then
 # Install the ODBC driver
@@ -217,6 +219,8 @@ source ~/.bashrc
 sudo apt-get install -y unixodbc-dev
 fi
 
+
+# Oracle ODBC
 sudo ldconfig -p | grep oracle
 if [ "$?" -ne "0" ]; then
 
@@ -229,7 +233,6 @@ curl https://download.oracle.com/otn_software/linux/instantclient/2370000/instan
 
 curl https://download.oracle.com/otn_software/linux/instantclient/2370000/instantclient-sqlplus-linux.x64-23.7.0.25.01.zip \
 -o /tmp/instantclient-sqlplus-linux.x64-23.7.0.25.01.zip
-
 
 sudo mkdir -p /opt/oracle
 cd /opt/oracle
@@ -254,3 +257,6 @@ sudo ldconfig
 sudo ldconfig -p | grep oracle
 fi
 
+
+# proxy, agent, gateway must be in listening state
+ss --tcp --listen --numeric | grep -E "(10051|10050|10052)"
