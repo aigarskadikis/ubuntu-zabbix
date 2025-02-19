@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+# to simulate script with system which has less than 1GM of RAM execute:
 # sudo dd if=/dev/zero of=/myswap1 bs=1M count=1024 && sudo chown root:root /myswap1 && sudo chmod 0600 /myswap1 && sudo mkswap /myswap1 && sudo swapon /myswap1 && free -m && sudo dd if=/dev/zero of=/myswap2 bs=1M count=1024 && sudo chown root:root /myswap2 && sudo chmod 0600 /myswap2 && sudo mkswap /myswap2 && sudo swapon /myswap2 && free -m && echo 1 | sudo tee /proc/sys/vm/overcommit_memory
 
 # don't prompt for service restarts during "apt install"
@@ -12,8 +13,7 @@ ZBX_CACHESIZE="384M"
 ZBX_HANODENAME="$(hostname -s)"
 ZBX_HISTORYCACHESIZE="160M"	
 ZBX_HISTORYINDEXCACHESIZE="40M"
-ZBX_NODEADDRESS="$(ip a | grep -Eo "[0-9]+\.133\.[0-9]+\.[0-9]+" | grep -v "10.133.255.255")"
-# ZBX_NODEADDRESS="$(ip -4 addr show eth0 | grep -oP '(?<=inet\s)10+(\.\d+){3}')"
+ZBX_NODEADDRESS="$(ip -4 addr show eth1 | grep -oP '(?<=inet\s)10+(\.\d+){3}')"
 ZBX_STARTREPORTWRITERS="1"
 ZBX_TRENDCACHESIZE="512M"
 ZBX_TRENDFUNCTIONCACHESIZE="128M"
@@ -39,17 +39,19 @@ while [[ "$#" -gt 0 ]]; do
         --WebServiceURL=*)                           ZBX_WEBSERVICEURL="${1#*=}"; shift ;;
         --TARGET_ZABBIX_SERVER_PGSQL=*)     TARGET_ZABBIX_SERVER_PGSQL="${1#*=}"; shift ;;
         --TARGET_ZABBIX_AGENT2=*)                 TARGET_ZABBIX_AGENT2="${1#*=}"; shift ;;
+        --POSTGRES_SUPER_USER=*)                   POSTGRES_SUPER_USER="${1#*=}"; shift ;;
+        --POSTGRES_SUPER_PASS=*)                   POSTGRES_SUPER_PASS="${1#*=}"; shift ;;
+        --NETINT=*)                                             NETINT="${1#*=}"; shift ;;
         *) echo "Unknown parameter passed: $1"; exit 1 ;;
     esac
 done
 
 # Set mandatory arguments
-if [[ -z "$DB_SERVER_HOST" || -z "$DB_SERVER_PORT" || -z "$POSTGRES_PASSWORD" || -z "$POSTGRES_USER" || -z "$POSTGRES_DB" || -z "$TARGET_ZABBIX_SERVER_PGSQL" || -z "$TARGET_ZABBIX_AGENT2" || -z "$ZBX_WEBSERVICEURL" ]]; then
+if [[ -z "$DB_SERVER_HOST" || -z "$DB_SERVER_PORT" || -z "$POSTGRES_PASSWORD" || -z "$POSTGRES_USER" || -z "$POSTGRES_DB" || -z "$TARGET_ZABBIX_SERVER_PGSQL" || -z "$TARGET_ZABBIX_AGENT2" || -z "$ZBX_WEBSERVICEURL" || -z "$POSTGRES_SUPER_USER" || -z "$POSTGRES_SUPER_PASS" ]]; then
    echo "Usage:"
-   echo "$0 --DBHost='10.133.112.87' --DBPort='5432' --DBPassword='zabbix' --DBUser='zabbix' --DBName='zabbix' --TARGET_ZABBIX_SERVER_PGSQL='7.2.3' --TARGET_ZABBIX_AGENT2='7.2.3' --WebServiceURL='http://10.133.253.45:10053/report'"
+   echo "$0 --DBHost='10.133.112.87' --DBPort='5432' --DBPassword='zabbix' --DBUser='zabbix' --DBName='zabbix' --TARGET_ZABBIX_SERVER_PGSQL='7.2.3' --TARGET_ZABBIX_AGENT2='7.2.3' --WebServiceURL='http://10.133.253.45:10053/report' --POSTGRES_SUPER_USER='postgres' --POSTGRES_SUPER_PASS='zabbix'"
    exit 1
 fi
-
 
 # from https://www.postgresql.org/download/linux/ubuntu/
 sudo apt-get -y install curl ca-certificates
@@ -86,7 +88,7 @@ SELECT datname FROM pg_database;
 if [ "$?" -ne "0" ]; then
 # prepare new
 
-PGPASSWORD=${POSTGRES_PASSWORD} PGHOST=${DB_SERVER_HOST} PGUSER=postgres PGPORT=${DB_SERVER_PORT} \
+PGPASSWORD=${POSTGRES_SUPER_PASS} PGHOST=${DB_SERVER_HOST} PGUSER=${POSTGRES_SUPER_USER} PGPORT=${DB_SERVER_PORT} \
 psql -c "
 CREATE DATABASE ${POSTGRES_DB} WITH OWNER = ${POSTGRES_USER};
 "
@@ -194,7 +196,7 @@ sudo sed -i "s|^.*HostnameItem=.*|HostnameItem=system.hostname[shorthost]|" /etc
 # if checksum file does not exist then create an empty one
 [[ ! -f /etc/zabbix/md5sum.zabbix_agent2.conf ]] && sudo touch /etc/zabbix/md5sum.zabbix_agent2.conf
 # validate current checksum
-MD5SUM_ZABBIX_AGENT2_CONF=$(md5sum /etc/zabbix/zabbix_agent2.conf /etc/zabbix/zabbix_agent2.d/* | md5sum | grep -Eo "^\S+")
+MD5SUM_ZABBIX_AGENT2_CONF=$(grep -r "=" /etc/zabbix/zabbix_agent2.conf /etc/zabbix/zabbix_agent2.d | sort | md5sum | grep -Eo "^\S+")
 # if checksum does not match with old 
 grep "$MD5SUM_ZABBIX_AGENT2_CONF" /etc/zabbix/md5sum.zabbix_agent2.conf 
 if [ "$?" -ne "0" ]; then

@@ -175,7 +175,7 @@ sudo sed -i "s|^.*HostnameItem=.*|HostnameItem=system.hostname[shorthost]|" /etc
 # if checksum file does not exist then create an empty one
 [[ ! -f /etc/zabbix/md5sum.zabbix_agent2.conf ]] && sudo touch /etc/zabbix/md5sum.zabbix_agent2.conf
 # validate current checksum
-MD5SUM_ZABBIX_AGENT2_CONF=$(md5sum /etc/zabbix/zabbix_agent2.conf /etc/zabbix/zabbix_agent2.d/* | md5sum | grep -Eo "^\S+")
+MD5SUM_ZABBIX_AGENT2_CONF=$(grep -r "=" /etc/zabbix/zabbix_agent2.conf /etc/zabbix/zabbix_agent2.d | sort | md5sum | grep -Eo "^\S+")
 # if checksum does not match with old 
 grep "$MD5SUM_ZABBIX_AGENT2_CONF" /etc/zabbix/md5sum.zabbix_agent2.conf 
 if [ "$?" -ne "0" ]; then
