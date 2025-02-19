@@ -260,4 +260,4 @@ fi
 
 
 # proxy, agent, gateway must be in listening state
-ss --tcp --listen --numeric | grep -E "(10051|10050|10052)"
+sudo ss --tcp --listen --numeric --process | grep -E "(10051|10050|10052)"
