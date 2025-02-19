@@ -8,21 +8,16 @@ echo "\$nrconf{restart} = 'a';" | sudo tee /etc/needrestart/conf.d/no-prompt.con
 # stealing naming from docker containers at 
 # https://hub.docker.com/r/zabbix/zabbix-server-pgsql
 # default zabbix_server.conf values:
-DB_SERVER_HOST="10.133.112.87"
-DB_SERVER_PORT="5432"
-POSTGRES_DB="zabbix"
-POSTGRES_PASSWORD="zabbix"
-POSTGRES_USER="zabbix"
 ZBX_CACHESIZE="384M"
 ZBX_HANODENAME="$(hostname -s)"
 ZBX_HISTORYCACHESIZE="160M"	
 ZBX_HISTORYINDEXCACHESIZE="40M"
 ZBX_NODEADDRESS="$(ip a | grep -Eo "[0-9]+\.133\.[0-9]+\.[0-9]+" | grep -v "10.133.255.255")"
+# ZBX_NODEADDRESS="$(ip -4 addr show eth0 | grep -oP '(?<=inet\s)10+(\.\d+){3}')"
 ZBX_STARTREPORTWRITERS="1"
 ZBX_TRENDCACHESIZE="512M"
 ZBX_TRENDFUNCTIONCACHESIZE="128M"
 ZBX_VALUECACHESIZE="512M"
-ZBX_WEBSERVICEURL="http://10.133.253.45:10053/report"
 
 # Parse arguments
 while [[ "$#" -gt 0 ]]; do
@@ -49,14 +44,15 @@ while [[ "$#" -gt 0 ]]; do
 done
 
 # Set mandatory arguments
-if [[ -z "$DB_SERVER_HOST" || -z "$DB_SERVER_PORT" || -z "$POSTGRES_PASSWORD" || -z "$POSTGRES_USER" || -z "$POSTGRES_DB" || -z "$TARGET_SRV_VERSION" || -z "$TARGET_GNT_VERSION" ]]; then
-   echo "Usage: $0 --DBHost='10.133.112.87' --DBPort='5432' --DBPassword='zabbix' --DBUser='zabbix' --DBName='zabbix' --TARGET_SRV_VERSION='7.2.3' --TARGET_GNT_VERSION='7.2.3'"
+if [[ -z "$DB_SERVER_HOST" || -z "$DB_SERVER_PORT" || -z "$POSTGRES_PASSWORD" || -z "$POSTGRES_USER" || -z "$POSTGRES_DB" || -z "$TARGET_SRV_VERSION" || -z "$TARGET_GNT_VERSION" || -z "$ZBX_WEBSERVICEURL" ]]; then
+   echo "Usage:"
+   echo "$0 --DBHost='10.133.112.87' --DBPort='5432' --DBPassword='zabbix' --DBUser='zabbix' --DBName='zabbix' --TARGET_SRV_VERSION='7.2.3' --TARGET_GNT_VERSION='7.2.3' --WebServiceURL='http://10.133.253.45:10053/report'"
    exit 1
 fi
 
 
 # from https://www.postgresql.org/download/linux/ubuntu/
-sudo apt -y install curl ca-certificates
+sudo apt-get -y install curl ca-certificates
 sudo install -d /usr/share/postgresql-common/pgdg
 sudo curl -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc --fail https://www.postgresql.org/media/keys/ACCC4CF8.asc
 sudo sh -c 'echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
@@ -80,7 +76,7 @@ sudo apt update
 APT_LIST_INSTALLED=$(apt list --installed)
 
 # prepare troubleshooting utilities, allow to fetch passive metrics, allow to deliver data on demand, JSON beautifier
-sudo apt -y install strace zabbix-get zabbix-sender jq postgresql-client-17 zabbix-sql-scripts
+sudo apt-get -y install strace zabbix-get zabbix-sender jq postgresql-client-17 zabbix-sql-scripts
 
 # create DB, user "zabbix" must exist before
 # createuser --pwprompt zabbix
@@ -93,7 +89,7 @@ SELECT datname FROM pg_database;
 if [ "$?" -ne "0" ]; then
 # prepare new
 
-PGPASSWORD=${POSTGRES_PASSWORD} PGHOST=${DB_SERVER_HOST} PGUSER=${POSTGRES_USER} PGPORT=${DB_SERVER_PORT} \
+PGPASSWORD=${POSTGRES_PASSWORD} PGHOST=${DB_SERVER_HOST} PGUSER=postgres PGPORT=${DB_SERVER_PORT} \
 psql -c "
 CREATE DATABASE ${POSTGRES_DB} WITH OWNER = ${POSTGRES_USER};
 "
@@ -192,7 +188,7 @@ if [ -z "$GNT_VERSION_AVAILABLE" ]; then
     echo "Version \"${GNT_VERSION_AVAILABLE}\" of zabbix-agent2 is not available in apt cache"
 else
     # install Zabbix agent
-	zabbix_agent2 --version | grep "${TARGET_GNT_VERSION}" || sudo apt -y --allow-downgrades install zabbix-agent2=${GNT_VERSION_AVAILABLE}
+	zabbix_agent2 --version | grep "${TARGET_GNT_VERSION}" || sudo apt-get -y --allow-downgrades install zabbix-agent2=${GNT_VERSION_AVAILABLE}
 fi
 fi
 # delete static hostname
