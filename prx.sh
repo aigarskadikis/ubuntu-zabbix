@@ -12,12 +12,14 @@ while [[ "$#" -gt 0 ]]; do
         --TARGET_PRX_VERSION=*)        TARGET_PRX_VERSION="${1#*=}"; shift ;;
         --TARGET_GNT_VERSION=*)        TARGET_GNT_VERSION="${1#*=}"; shift ;;
         --TARGET_JMX_VERSION=*)        TARGET_JMX_VERSION="${1#*=}"; shift ;;
+        --PSK=*)                                      PSK="${1#*=}"; shift ;;
         *) echo "Unknown parameter passed: $1"; exit 1 ;;
     esac
 done
 
 if [[ -z "$ZBX_SERVER_HOST" || -z "$TARGET_PRX_VERSION" || -z "$TARGET_GNT_VERSION" || -z "$TARGET_JMX_VERSION" ]]; then
-   echo "Usage: $0 --ZBX_SERVER_HOST='10.133.253.44' --TARGET_PRX_VERSION='7.2.3' --TARGET_GNT_VERSION='7.2.3' --TARGET_JMX_VERSION='7.2.3'"
+   echo "Usage:"
+   echo "$0 --ZBX_SERVER_HOST='10.133.253.44' --TARGET_PRX_VERSION='7.2.3' --TARGET_GNT_VERSION='7.2.3' --TARGET_JMX_VERSION='7.2.3' --PSK='7e26ebf6fcb6770d3827b6e59701387eab92e2a0e21669b0013b22fdf33754c4'"
    exit 1
 fi
 
@@ -39,7 +41,7 @@ sudo apt update
 APT_LIST_INSTALLED=$(apt list --installed)
 
 # prepare troubleshooting utilities. allow to fetch passive metrics. allow to deliver data on demand (via cronjob). JSON beautifier
-sudo apt -y install strace zabbix-get zabbix-sender jq tcpdump
+sudo apt-get -y install strace zabbix-get zabbix-sender jq tcpdump
 
 echo "${APT_LIST_INSTALLED}" | grep "zabbix-proxy-sqlite3.*${TARGET_PRX_VERSION}"
 if [ "$?" -ne "0" ]; then
@@ -51,7 +53,7 @@ echo "$PRX_VERSION_AVAILABLE"
 if [ -z "$PRX_VERSION_AVAILABLE" ]; then
     echo "Version \"${TARGET_PRX_VERSION}\" of \"zabbix-proxy-sqlite3\" is not available in apt cache"
 else
-    zabbix_proxy --version | grep "$TARGET_PRX_VERSION" || sudo apt -y --allow-downgrades install zabbix-proxy-sqlite3=${PRX_VERSION_AVAILABLE}
+    zabbix_proxy --version | grep "$TARGET_PRX_VERSION" || sudo apt-get -y --allow-downgrades install zabbix-proxy-sqlite3=${PRX_VERSION_AVAILABLE}
 fi
 fi
 fi
@@ -67,7 +69,7 @@ mkdir -p /etc/zabbix/zabbix_proxy.d
 sudo apt -y install openssl
 
 # if PSK has been never configured, then install one
-[[ ! -f /var/lib/zabbix/.key.psk ]] && openssl rand -hex 32 > /var/lib/zabbix/.key.psk
+echo "${PSK}" | sudo tee /var/lib/zabbix/.key.psk
 
 # do not allow files to be accessible by other linux users
 sudo chown -R zabbix. /var/lib/zabbix
@@ -161,7 +163,7 @@ if [ -z "$JMX_VERSION_AVAILABLE" ]; then
     echo "Version \"${JMX_VERSION_AVAILABLE}\" of zabbix-java-gateway is not available in apt cache"
 else
     # install Zabbix agent
-	sudo apt -y --allow-downgrades install zabbix-java-gateway=${JMX_VERSION_AVAILABLE}
+	sudo apt-get -y --allow-downgrades install zabbix-java-gateway=${JMX_VERSION_AVAILABLE}
 fi
 fi
 
@@ -177,7 +179,7 @@ ss --tcp --listen --numeric | grep -E "(10051|10050|10052)"
 echo "${APT_LIST_INSTALLED}" | grep "odbc-postgresql"
 if [ "$?" -ne "0" ]; then
 # setup ODBC driver for PostgreSQL
-sudo apt -y install odbc-postgresql
+sudo apt-get -y install odbc-postgresql
 fi
 
 
