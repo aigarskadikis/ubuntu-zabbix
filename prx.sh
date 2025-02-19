@@ -139,6 +139,7 @@ AVAILABLE_ZABBIX_JAVA_GATEWAY=$(apt-cache madison zabbix-java-gateway | grep "za
 if [ -z "$AVAILABLE_ZABBIX_JAVA_GATEWAY" ]; then
     echo "Version \"${TARGET_ZABBIX_JAVA_GATEWAY}\" of \"zabbix-java-gateway\" is not available in apt cache"
 else
+    sudo apt-get -y install openjdk-11-jre-headless
     sudo apt-get -y --allow-downgrades install zabbix-java-gateway=${AVAILABLE_ZABBIX_JAVA_GATEWAY}
 	sudo systemctl enable zabbix-java-gateway
 fi
