@@ -103,16 +103,14 @@ fi
 # prepare backend
 zabbix_server --version | grep "$TARGET_ZABBIX_SERVER_PGSQL"
 if [ "$?" -ne "0" ]; then
-
-SRV_VERSION_AVAILABLE=$(apt list -a zabbix-server-pgsql | grep "${TARGET_ZABBIX_SERVER_PGSQL}" | grep -m1 -Eo "\S+:\S+" | head -1)
-echo "$SRV_VERSION_AVAILABLE"
+AVAILABLE_ZABBIX_SERVER=$(apt list -a zabbix-server-pgsql | grep "${TARGET_ZABBIX_SERVER_PGSQL}" | grep -m1 -Eo "\S+:\S+" | head -1)
+echo "$AVAILABLE_ZABBIX_SERVER"
 # check if variable is empty
-if [ -z "$SRV_VERSION_AVAILABLE" ]; then
+if [ -z "$AVAILABLE_ZABBIX_SERVER" ]; then
     echo "Version \"${TARGET_ZABBIX_SERVER_PGSQL}\" of \"zabbix-server-pgsql\" is not available in apt cache"
 else
-	zabbix_server --version | grep "$TARGET_ZABBIX_SERVER_PGSQL" || sudo apt -y --allow-downgrades install zabbix-server-pgsql=${SRV_VERSION_AVAILABLE}
+	zabbix_server --version | grep "$TARGET_ZABBIX_SERVER_PGSQL" || sudo apt-get -y --allow-downgrades install zabbix-server-pgsql=${AVAILABLE_ZABBIX_SERVER}
 fi
-
 fi
 
 

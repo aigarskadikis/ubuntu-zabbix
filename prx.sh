@@ -8,23 +8,23 @@
 # pick up arguments
 while [[ "$#" -gt 0 ]]; do
     case $1 in
-        --ZBX_SERVER_HOST=*)              ZBX_SERVER_HOST="${1#*=}"; shift ;;
-        --TARGET_PRX_VERSION=*)        TARGET_PRX_VERSION="${1#*=}"; shift ;;
-        --TARGET_GNT_VERSION=*)        TARGET_GNT_VERSION="${1#*=}"; shift ;;
-        --TARGET_JMX_VERSION=*)        TARGET_JMX_VERSION="${1#*=}"; shift ;;
+        --ZBX_SERVER_HOST=*)                          ZBX_SERVER_HOST="${1#*=}"; shift ;;
+        --TARGET_ZABBIX_PROXY=*)                  TARGET_ZABBIX_PROXY="${1#*=}"; shift ;;
+        --TARGET_ZABBIX_AGENT2=*)                TARGET_ZABBIX_AGENT2="${1#*=}"; shift ;;
+        --TARGET_ZABBIX_JAVA_GATEWAY=*)    TARGET_ZABBIX_JAVA_GATEWAY="${1#*=}"; shift ;;
         --PSK=*)                                      PSK="${1#*=}"; shift ;;
         *) echo "Unknown parameter passed: $1"; exit 1 ;;
     esac
 done
 
-if [[ -z "$ZBX_SERVER_HOST" || -z "$TARGET_PRX_VERSION" || -z "$TARGET_GNT_VERSION" || -z "$TARGET_JMX_VERSION" ]]; then
+if [[ -z "$ZBX_SERVER_HOST" || -z "$TARGET_ZABBIX_PROXY" || -z "$TARGET_ZABBIX_AGENT2" || -z "$TARGET_ZABBIX_JAVA_GATEWAY" ]]; then
    echo "Usage:"
-   echo "$0 --ZBX_SERVER_HOST='10.133.253.44' --TARGET_PRX_VERSION='7.2.3' --TARGET_GNT_VERSION='7.2.3' --TARGET_JMX_VERSION='7.2.3' --PSK='7e26ebf6fcb6770d3827b6e59701387eab92e2a0e21669b0013b22fdf33754c4'"
+   echo "$0 --ZBX_SERVER_HOST='10.133.253.44' --TARGET_ZABBIX_PROXY='7.2.3' --TARGET_ZABBIX_AGENT2='7.2.3' --TARGET_ZABBIX_JAVA_GATEWAY='7.2.3' --PSK='7e26ebf6fcb6770d3827b6e59701387eab92e2a0e21669b0013b22fdf33754c4'"
    exit 1
 fi
 
 # check existence of repository
-apt list -a zabbix-proxy-sqlite3 | grep ":7.2"
+dpkg-query --showformat='${Version}' --show zabbix-release
 if [ "$?" -ne "0" ]; then
 # erase old repository
 rm -rf "/tmp/zabbix-release.dep"
@@ -34,27 +34,33 @@ curl https://repo.zabbix.com/zabbix/7.2/release/ubuntu/pool/main/z/zabbix-releas
 sudo dpkg -i /tmp/zabbix-release.dep && rm -rf "/tmp/zabbix-release.dep"
 fi
 
+
+dpkg-query --showformat='${Version}' --show packages-microsoft-prod
+if [ "$?" -ne "0" ]; then
+curl -sSL -O https://packages.microsoft.com/config/ubuntu/$(grep VERSION_ID /etc/os-release | cut -d '"' -f 2)/packages-microsoft-prod.deb
+# Install the package
+sudo dpkg -i packages-microsoft-prod.deb
+# Delete the file
+rm -rf packages-microsoft-prod.deb
+fi
+
 # refresh apt cache
 sudo apt update
-
-# list of installed packages 
-APT_LIST_INSTALLED=$(apt list --installed)
 
 # prepare troubleshooting utilities. allow to fetch passive metrics. allow to deliver data on demand (via cronjob). JSON beautifier
 sudo apt-get -y install strace zabbix-get zabbix-sender jq tcpdump
 
-echo "${APT_LIST_INSTALLED}" | grep "zabbix-proxy-sqlite3.*${TARGET_PRX_VERSION}"
+# prepare proxy
+zabbix_proxy --version | grep "$TARGET_ZABBIX_PROXY_SQLITE3"
 if [ "$?" -ne "0" ]; then
-zabbix_proxy --version | grep "$TARGET_PRX_VERSION"
-if [ "$?" -ne "0" ]; then
-PRX_VERSION_AVAILABLE=$(apt list -a zabbix-proxy-sqlite3 | grep "${TARGET_PRX_VERSION}" | grep -m1 -Eo "\S+:\S+" | head -1)
-echo "$PRX_VERSION_AVAILABLE"
+AVAILABLE_ZABBIX_PROXY_SQLITE3=$(apt list -a zabbix-proxy-sqlite3 | grep "${TARGET_ZABBIX_PROXY_SQLITE3}" | grep -m1 -Eo "\S+:\S+" | head -1)
+echo "$AVAILABLE_ZABBIX_PROXY_SQLITE3"
 # check if variable is empty
-if [ -z "$PRX_VERSION_AVAILABLE" ]; then
-    echo "Version \"${TARGET_PRX_VERSION}\" of \"zabbix-proxy-sqlite3\" is not available in apt cache"
+if [ -z "$AVAILABLE_ZABBIX_PROXY_SQLITE3" ]; then
+    echo "Version \"${TARGET_ZABBIX_PROXY_SQLITE3}\" of \"zabbix-proxy-sqlite3\" is not available in apt cache"
 else
-    zabbix_proxy --version | grep "$TARGET_PRX_VERSION" || sudo apt-get -y --allow-downgrades install zabbix-proxy-sqlite3=${PRX_VERSION_AVAILABLE}
-fi
+	zabbix_proxy --version | grep "$TARGET_ZABBIX_PROXY_SQLITE3" || sudo apt-get -y --allow-downgrades install zabbix-proxy-sqlite3=${AVAILABLE_ZABBIX_PROXY_SQLITE3}
+	sudo systemctl enable zabbix-proxy
 fi
 fi
 
@@ -98,6 +104,7 @@ ProxyMemoryBufferSize=160M
 ProxyMode=0
 Server=${ZBX_SERVER_HOST}
 SocketDir=/run/zabbix
+StartJavaPollers=5
 StatsAllowedIP=127.0.0.1
 TLSAccept=psk
 TLSConnect=psk
@@ -110,38 +117,63 @@ grep -Eor ^[^#]+ /etc/zabbix/zabbix_proxy.conf /etc/zabbix/zabbix_proxy.d | sort
 
 # if checksum file does not exist then create an empty one
 [[ ! -f /etc/zabbix/md5sum.zabbix_proxy.conf ]] && sudo touch /etc/zabbix/md5sum.zabbix_proxy.conf
-
 # validate current checksum
-MD5SUM_PRX_CONF=$(md5sum /etc/zabbix/zabbix_proxy.conf | md5sum | grep -Eo "^\S+")
-
+MD5SUM_ZABBIX_PROXY_CONF=$(md5sum /etc/zabbix/zabbix_proxy.conf | md5sum | grep -Eo "^\S+")
 # if checksum does not match with old 
-grep "$MD5SUM_PRX_CONF" /etc/zabbix/md5sum.zabbix_proxy.conf 
+grep "$MD5SUM_ZABBIX_PROXY_CONF" /etc/zabbix/md5sum.zabbix_proxy.conf 
 if [ "$?" -ne "0" ]; then
-
 # restart service
 sudo systemctl restart zabbix-proxy
-
 # reinstall checksum
-echo "$MD5SUM_PRX_CONF" | sudo tee /etc/zabbix/md5sum.zabbix_proxy.conf
-
+echo "$MD5SUM_ZABBIX_PROXY_CONF" | sudo tee /etc/zabbix/md5sum.zabbix_proxy.conf
 fi
 
-# enable at startup
-sudo systemctl enable zabbix-proxy
-
-
-
-# check if agent2 is on correct version
-echo "${APT_LIST_INSTALLED}" | grep "zabbix-agent2.*${TARGET_GNT_VERSION}"
+# check if installed version match desired version
+dpkg-query --showformat='${Version}' --show zabbix-java-gateway | grep -P "^1:${TARGET_ZABBIX_JAVA_GATEWAY}"
 if [ "$?" -ne "0" ]; then
-# force agent2 to be on specific version
-GNT_VERSION_AVAILABLE=$(apt list -a zabbix-agent2 | grep "${TARGET_GNT_VERSION}" | grep -m1 -Eo "\S+:\S+" | head -1)
-# check if variable is empty
-if [ -z "$GNT_VERSION_AVAILABLE" ]; then
-    echo "Version \"${GNT_VERSION_AVAILABLE}\" of zabbix-agent2 is not available in apt cache"
+# observe if desired is available
+AVAILABLE_ZABBIX_JAVA_GATEWAY=$(apt-cache madison zabbix-java-gateway | grep "zabbix-java-gateway.*repo.zabbix.com" | grep -Eo "\S+${TARGET_ZABBIX_JAVA_GATEWAY}\S+")
+# if variable not empty, then go for it
+if [ -z "$AVAILABLE_ZABBIX_JAVA_GATEWAY" ]; then
+    echo "Version \"${TARGET_ZABBIX_JAVA_GATEWAY}\" of \"zabbix-java-gateway\" is not available in apt cache"
 else
-    # install Zabbix agent
-	zabbix_agent2 --version | grep "${TARGET_GNT_VERSION}" || sudo apt -y --allow-downgrades install zabbix-agent2=${GNT_VERSION_AVAILABLE}
+    sudo apt-get -y --allow-downgrades install zabbix-java-gateway=${AVAILABLE_ZABBIX_JAVA_GATEWAY}
+	sudo systemctl enable zabbix-java-gateway
+fi
+fi
+echo '
+LISTEN_IP="0.0.0.0"
+LISTEN_PORT=10052
+PID_FILE="/var/run/zabbix/zabbix_java_gateway.pid"
+START_POLLERS=5
+TIMEOUT=3
+' | sudo tee /etc/zabbix/zabbix_java_gateway.conf
+# if checksum file does not exist then create an empty one
+[[ ! -f /etc/zabbix/md5sum.zabbix_java_gateway.conf ]] && sudo touch /etc/zabbix/md5sum.zabbix_java_gateway.conf
+# validate current checksum
+MD5SUM_ZABBIX_JAVA_GATEWAY_CONF=$(md5sum /etc/zabbix/zabbix_java_gateway.conf | md5sum | grep -Eo "^\S+")
+# if checksum does not match with old 
+grep "$MD5SUM_ZABBIX_JAVA_GATEWAY_CONF" /etc/zabbix/md5sum.zabbix_java_gateway.conf 
+if [ "$?" -ne "0" ]; then
+# restart service
+sudo systemctl restart zabbix-java-gateway
+# reinstall checksum
+echo "$MD5SUM_ZABBIX_JAVA_GATEWAY_CONF" | sudo tee /etc/zabbix/md5sum.zabbix_java_gateway.conf
+fi
+
+
+# check if installed version match desired version
+dpkg-query --showformat='${Version}' --show zabbix-agent2 | grep -P "^1:${TARGET_ZABBIX_AGENT2}"
+if [ "$?" -ne "0" ]; then
+# observe if desired is available
+AVAILABLE_ZABBIX_AGENT2=$(apt-cache madison zabbix-agent2 | grep "zabbix-agent2.*repo.zabbix.com" | grep -Eo "\S+${TARGET_ZABBIX_AGENT2}\S+")
+# if variable not empty, then go for it
+if [ -z "$AVAILABLE_ZABBIX_AGENT2" ]; then
+    echo "Version \"${TARGET_ZABBIX_AGENT2}\" of \"zabbix-agent2\" is not available in apt cache"
+else
+    sudo apt-get -y --allow-downgrades install zabbix-agent2=${AVAILABLE_ZABBIX_AGENT2}
+	sudo systemctl restart zabbix-agent2
+	sudo systemctl enable zabbix-agent2
 fi
 fi
 # delete static hostname
@@ -149,49 +181,31 @@ sudo sed -i '/^Hostname=Zabbix server$/d' /etc/zabbix/zabbix_agent2.conf
 # set agent 2 to not use FQDN but a short hostname (same as reported behind 'hostname -s')
 sudo sed -i "s|^.*HostnameItem=.*|HostnameItem=system.hostname[shorthost]|" /etc/zabbix/zabbix_agent2.conf
 # restart 
-sudo systemctl restart zabbix-agent2
-# enable at startup
-sudo systemctl enable zabbix-agent2
-
-
-echo "${APT_LIST_INSTALLED}" | grep "zabbix-java-gateway.*${TARGET_JMX_VERSION}"
+# if checksum file does not exist then create an empty one
+[[ ! -f /etc/zabbix/md5sum.zabbix_agent2.conf ]] && sudo touch /etc/zabbix/md5sum.zabbix_agent2.conf
+# validate current checksum
+MD5SUM_ZABBIX_AGENT2_CONF=$(grep -r "=" /etc/zabbix/zabbix_agent2.conf /etc/zabbix/zabbix_agent2.d | sort | md5sum | grep -Eo "^\S+")
+# if checksum does not match with old
+grep "$MD5SUM_ZABBIX_AGENT2_CONF" /etc/zabbix/md5sum.zabbix_agent2.conf 
 if [ "$?" -ne "0" ]; then
-# force Zabbix Java Gateway to be on specific version
-JMX_VERSION_AVAILABLE=$(apt list -a zabbix-java-gateway | grep "${TARGET_JMX_VERSION}" | grep -m1 -Eo "\S+:\S+" | head -1)
-# check if variable is empty
-if [ -z "$JMX_VERSION_AVAILABLE" ]; then
-    echo "Version \"${JMX_VERSION_AVAILABLE}\" of zabbix-java-gateway is not available in apt cache"
-else
-    # install Zabbix agent
-	sudo apt-get -y --allow-downgrades install zabbix-java-gateway=${JMX_VERSION_AVAILABLE}
+# restart service
+sudo systemctl restart zabbix-agent2
+# reinstall checksum
+echo "$MD5SUM_ZABBIX_AGENT2_CONF" | sudo tee /etc/zabbix/md5sum.zabbix_agent2.conf
 fi
-fi
-
-# restart 
-sudo systemctl restart zabbix-java-gateway
-# enable at startup
-sudo systemctl enable zabbix-java-gateway
 
 # proxy, agent, gateway must be in listening state
 ss --tcp --listen --numeric | grep -E "(10051|10050|10052)"
 
 # query PostgreSQL ODBC support (from stock Ubuntu repository)
-echo "${APT_LIST_INSTALLED}" | grep "odbc-postgresql"
+dpkg-query --showformat='${Version}' --show odbc-postgresql
 if [ "$?" -ne "0" ]; then
 # setup ODBC driver for PostgreSQL
 sudo apt-get -y install odbc-postgresql
 fi
 
-
-echo "${APT_LIST_INSTALLED}" | grep "mssql-tools18"
+dpkg-query --showformat='${Version}' --show "mssql-tools18"
 if [ "$?" -ne "0" ]; then
-# install MS SQL ODBC. https://learn.microsoft.com/en-us/sql/connect/odbc/linux-mac/installing-the-microsoft-odbc-driver-for-sql-server?view=sql-server-ver16&tabs=ubuntu18-install%2Calpine17-install%2Cdebian8-install%2Credhat7-13-install%2Crhel7-offline
-# Download the package to configure the Microsoft repo
-curl -sSL -O https://packages.microsoft.com/config/ubuntu/$(grep VERSION_ID /etc/os-release | cut -d '"' -f 2)/packages-microsoft-prod.deb
-# Install the package
-sudo dpkg -i packages-microsoft-prod.deb
-# Delete the file
-rm packages-microsoft-prod.deb
 # Install the ODBC driver
 sudo apt-get update
 sudo ACCEPT_EULA=Y apt-get install -y msodbcsql18
@@ -239,6 +253,4 @@ sudo ldconfig
 # this should print libraries recognized by OS
 sudo ldconfig -p | grep oracle
 fi
-
-
 

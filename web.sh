@@ -158,7 +158,7 @@ if [ "$?" -ne "0" ]; then
 AVAILABLE_ZABBIX_AGENT2=$(apt-cache madison zabbix-agent2 | grep "zabbix-agent2.*repo.zabbix.com" | grep -Eo "\S+${TARGET_ZABBIX_AGENT2}\S+")
 # if variable not empty, then go for it
 if [ -z "$AVAILABLE_ZABBIX_AGENT2" ]; then
-    echo "Version \"${AVAILABLE_ZABBIX_AGENT2}\" of \"zabbix-agent2\" is not available in apt cache"
+    echo "Version \"${TARGET_ZABBIX_AGENT2}\" of \"zabbix-agent2\" is not available in apt cache"
 else
     sudo apt-get -y --allow-downgrades install zabbix-agent2=${AVAILABLE_ZABBIX_AGENT2}
 	sudo systemctl restart zabbix-agent2
