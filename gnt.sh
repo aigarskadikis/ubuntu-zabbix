@@ -1,11 +1,14 @@
 #!/usr/bin/env bash
 
 # this script maintains /etc/zabbix/zabbix_agent2.conf and restarts service if necessary
+# it's possible to extend functionality of Zabbix agent 2 by installing custom UserParameter in "/etc/zabbix/zabbix_agent2.d"
+# if UserParameter is a sensitive operation,
+# it requires to add "sudo", plus installing the missing sudoers rule. two examples included in script:
+# sudo ss --tcp --tcp --listen --numeric --process
+# sudo du / 2>/dev/null | sort -n -r | head -n 50
 
 # to install agent2 for various Linux OS, follow wizard from:
 # https://www.zabbix.com/download?zabbix=7.2&os_distribution=ubuntu&os_version=22.04&components=agent_2&db=&ws=
-
-ZBX_SERVER="127.0.0.1"
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
