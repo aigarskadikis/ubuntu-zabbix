@@ -29,6 +29,7 @@ fi
 # all possible agent2 7.2 settings on Linux
 # https://git.zabbix.com/projects/ZBX/repos/zabbix/browse/src/go/conf/zabbix_agent2.conf?at=refs%2Fheads%2Frelease%2F7.2
 
+# Install configuration of Zabbix agent
 echo "
 BufferSend=5
 BufferSize=65535
@@ -56,7 +57,7 @@ UnsafeUserParameters=0
 
 # INSTALL CUSTOM CAPABILITIES
 
-# print all TCP listening ports
+# print all TCP listening ports with a process identification
 echo '
 # print all TCP listening ports
 UserParameter=ss.tcp.listen.numeric.process,sudo /usr/bin/ss --tcp --listen --numeric --process
