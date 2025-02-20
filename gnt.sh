@@ -59,10 +59,10 @@ UnsafeUserParameters=0
 # print all TCP listening ports
 echo '
 # print all TCP listening ports
-UserParameter=ss.tcp.listen.numeric.process,sudo /usr/bin/ss --tcp --tcp --listen --numeric --process
+UserParameter=ss.tcp.listen.numeric.process,sudo /usr/bin/ss --tcp --listen --numeric --process
 ' | grep -vE "^$" | sudo tee /etc/zabbix/zabbix_agent2.d/ss.tcp.listen.numeric.process.conf
 cd /etc/sudoers.d
-echo 'zabbix ALL=(ALL) NOPASSWD: /usr/bin/ss --tcp --tcp --listen --numeric --process' | sudo tee zabbix_ss_tcp_listen_numeric_process
+echo 'zabbix ALL=(ALL) NOPASSWD: /usr/bin/ss --tcp --listen --numeric --process' | sudo tee zabbix_ss_tcp_listen_numeric_process
 sudo chmod 0440 zabbix_ss_tcp_listen_numeric_process
 
 
