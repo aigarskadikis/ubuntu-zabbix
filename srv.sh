@@ -187,7 +187,7 @@ sudo touch /etc/zabbix/md5sum.zabbix_server.conf
 sudo chmod 644 /etc/zabbix/md5sum.zabbix_server.conf
 fi
 # validate current checksum
-MD5SUM_ZABBIX_SERVER_CONF=$(md5sum /etc/zabbix/zabbix_server.conf /etc/zabbix/zabbix_server.d/* | md5sum | grep -Eo "^\S+")
+MD5SUM_ZABBIX_SERVER_CONF=$(grep -r "=" /etc/zabbix/zabbix_server.conf /etc/zabbix/zabbix_server.d | sort | md5sum | grep -Eo "^\S+")
 # if checksum does not match with old
 
 # temporarily allow failures
