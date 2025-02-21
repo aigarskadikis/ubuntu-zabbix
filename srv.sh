@@ -228,11 +228,33 @@ fi
 fi
 set -e
 
-# delete static hostname
-sudo sed -i '/^Hostname=Zabbix server$/d' /etc/zabbix/zabbix_agent2.conf
-# set agent 2 to not use FQDN but a short hostname (same as reported behind 'hostname -s')
-sudo sed -i "s|^.*HostnameItem=.*|HostnameItem=system.hostname[shorthost]|" /etc/zabbix/zabbix_agent2.conf
-# restart 
+# all possible agent2 7.2 settings on Linux
+# https://git.zabbix.com/projects/ZBX/repos/zabbix/browse/src/go/conf/zabbix_agent2.conf?at=refs%2Fheads%2Frelease%2F7.2
+
+# Install configuration of Zabbix agent
+echo "
+BufferSend=5
+BufferSize=65535
+ControlSocket=/run/zabbix/agent.sock
+DebugLevel=3
+DenyKey=system.run[*]
+HeartbeatFrequency=60
+HostMetadataItem=system.uname
+HostnameItem=system.hostname[shorthost]
+Include=/etc/zabbix/zabbix_agent2.d/*.conf
+Include=/etc/zabbix/zabbix_agent2.d/plugins.d/*.conf
+ListenPort=10050
+LogFile=/var/log/zabbix/zabbix_agent2.log
+LogFileSize=1024
+PidFile=/run/zabbix/zabbix_agent2.pid
+PluginSocket=/run/zabbix/agent.plugin.sock
+Plugins.SystemRun.LogRemoteCommands=0
+RefreshActiveChecks=5
+Server=127.0.0.1
+ServerActive=127.0.0.1
+Timeout=28
+UnsafeUserParameters=0
+" | grep -vE "^$" | sudo tee /etc/zabbix/zabbix_agent2.conf
 
 # if checksum file does not exist then create an empty one
 [[ ! -f /etc/zabbix/md5sum.zabbix_agent2.conf ]] && sudo touch /etc/zabbix/md5sum.zabbix_agent2.conf
