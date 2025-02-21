@@ -141,10 +141,10 @@ server {
 ' | grep -vE "^$" | sudo tee /etc/nginx/conf.d/zabbix.conf
 
 # remove default site
-ls -1 /etc/nginx/sites-enabled | grep default && unlink /etc/nginx/sites-enabled/default
+ls -1 /etc/nginx/sites-enabled | grep default && sudo unlink /etc/nginx/sites-enabled/default
 
-systemctl restart nginx php8.1-fpm
-systemctl enable nginx php8.1-fpm
+sudo systemctl restart nginx php8.1-fpm
+sudo systemctl enable nginx php8.1-fpm
 
 # test if frontend recognized
 curl -kL "http://127.0.0.1/index.php" | grep -m1 -Eo "Zabbix" | tail -1
@@ -206,6 +206,10 @@ fi
 fi
 set -e
 
+# allow google chrome to generate tmp files in zabbix home
+sudo mkdir -p /var/lib/zabbix
+sudo chown -R zabbix. /var/lib/zabbix
+
 echo "
 AllowedIP=0.0.0.0/0,::/0
 DebugLevel=3
@@ -222,7 +226,7 @@ sudo touch /etc/zabbix/md5sum.zabbix_web_service.conf
 sudo chmod 644 /etc/zabbix/md5sum.zabbix_web_service.conf
 fi
 # validate current checksum
-MD5SUM_ZABBIX_WEB_SERVICE_CONF=$(md5sum /etc/zabbix/zabbix_web_service.conf /etc/zabbix/zabbix_web_service.d/* | md5sum | grep -Eo "^\S+")
+MD5SUM_ZABBIX_WEB_SERVICE_CONF=$(md5sum /etc/zabbix/zabbix_web_service.conf | md5sum | grep -Eo "^\S+")
 # if checksum does not match with old
 set +e
 grep "$MD5SUM_ZABBIX_WEB_SERVICE_CONF" /etc/zabbix/md5sum.zabbix_web_service.conf 
