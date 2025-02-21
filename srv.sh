@@ -63,7 +63,7 @@ set -o xtrace
 # Set mandatory arguments
 if [[ -z "$DB_SERVER_HOST" || -z "$DB_SERVER_PORT" || -z "$POSTGRES_PASSWORD" || -z "$POSTGRES_USER" || -z "$POSTGRES_DB" || -z "$TARGET_ZABBIX_SERVER_PGSQL" || -z "$TARGET_ZABBIX_AGENT2" || -z "$ZBX_WEBSERVICEURL" || -z "$POSTGRES_SUPER_USER" || -z "$POSTGRES_SUPER_PASS" || -z "$ZBX_SERVER_HOST" || -z "$ZBX_ACTIVESERVERS" ]]; then
    echo "Usage:"
-   echo "$0 --DBHost='10.133.112.87' --DBPort='5432' --DBPassword='zabbix' --DBUser='zabbix' --DBName='zabbix' --TARGET_ZABBIX_SERVER_PGSQL='7.2.3' --TARGET_ZABBIX_AGENT2='7.2.3' --WebServiceURL='http://10.133.253.45:10053/report' --POSTGRES_SUPER_USER='postgres' --POSTGRES_SUPER_PASS='zabbix' --ZBX_SERVER_HOST='app1,app2' --ZBX_ACTIVESERVERS='app1;app2' --Repo='https://repo.zabbix.com/zabbix/7.2/release/ubuntu/pool/main/z/zabbix-release/zabbix-release_latest_7.2+ubuntu22.04_all.deb'"
+   echo "$0 --DBHost='10.133.112.87' --DBPort='5432' --DBPassword='zabbix' --DBUser='zabbix' --DBName='zabbix' --TARGET_ZABBIX_SERVER_PGSQL='7.2.3' --TARGET_ZABBIX_AGENT2='7.2.3' --WebServiceURL='http://10.133.253.45:10053/report' --POSTGRES_SUPER_USER='postgres' --POSTGRES_SUPER_PASS='zabbix' --Server='app1,app2' --ServerActive='app1;app2' --Repo='https://repo.zabbix.com/zabbix/7.2/release/ubuntu/pool/main/z/zabbix-release/zabbix-release_latest_7.2+ubuntu22.04_all.deb'"
    exit 1
 fi
 
