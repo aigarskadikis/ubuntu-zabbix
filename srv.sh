@@ -32,35 +32,38 @@ set +o xtrace
 # Parse arguments
 while [[ "$#" -gt 0 ]]; do
     case $1 in
-        --DBHost=*)                                     DB_SERVER_HOST="${1#*=}"; shift ;;
-        --DBPort=*)                                     DB_SERVER_PORT="${1#*=}"; shift ;;
-        --DBPassword=*)                              POSTGRES_PASSWORD="${1#*=}"; shift ;;
-        --DBUser=*)                                      POSTGRES_USER="${1#*=}"; shift ;;
-        --DBName=*)                                        POSTGRES_DB="${1#*=}"; shift ;;
-        --CacheSize=*)                                   ZBX_CACHESIZE="${1#*=}"; shift ;;
-        --HANodeName=*)                                 ZBX_HANODENAME="${1#*=}"; shift ;;
-        --HistoryCacheSize=*)                     ZBX_HISTORYCACHESIZE="${1#*=}"; shift ;;
-        --HistoryIndexCacheSize=*)           ZBX_HISTORYINDEXCACHESIZE="${1#*=}"; shift ;;
-        --NodeAddress=*)                               ZBX_NODEADDRESS="${1#*=}"; shift ;;
-        --StartReportWriters=*)                 ZBX_STARTREPORTWRITERS="${1#*=}"; shift ;;
-        --TrendCacheSize=*)                         ZBX_TRENDCACHESIZE="${1#*=}"; shift ;;
-        --TrendFunctionCacheSize=*)         ZBX_TRENDFUNCTIONCACHESIZE="${1#*=}"; shift ;;
-        --ValueCacheSize=*)                         ZBX_VALUECACHESIZE="${1#*=}"; shift ;;
-        --WebServiceURL=*)                           ZBX_WEBSERVICEURL="${1#*=}"; shift ;;
-        --TARGET_ZABBIX_SERVER_PGSQL=*)     TARGET_ZABBIX_SERVER_PGSQL="${1#*=}"; shift ;;
-        --TARGET_ZABBIX_AGENT2=*)                 TARGET_ZABBIX_AGENT2="${1#*=}"; shift ;;
-        --POSTGRES_SUPER_USER=*)                   POSTGRES_SUPER_USER="${1#*=}"; shift ;;
-        --POSTGRES_SUPER_PASS=*)                   POSTGRES_SUPER_PASS="${1#*=}"; shift ;;
-        --NETINT=*)                                             NETINT="${1#*=}"; shift ;;
+        --DBHost=*)                                             DB_SERVER_HOST="${1#*=}"; shift ;;
+        --DBPort=*)                                             DB_SERVER_PORT="${1#*=}"; shift ;;
+        --DBPassword=*)                                      POSTGRES_PASSWORD="${1#*=}"; shift ;;
+        --DBUser=*)                                              POSTGRES_USER="${1#*=}"; shift ;;
+        --DBName=*)                                                POSTGRES_DB="${1#*=}"; shift ;;
+        --CacheSize=*)                                           ZBX_CACHESIZE="${1#*=}"; shift ;;
+        --HANodeName=*)                                         ZBX_HANODENAME="${1#*=}"; shift ;;
+        --HistoryCacheSize=*)                             ZBX_HISTORYCACHESIZE="${1#*=}"; shift ;;
+        --HistoryIndexCacheSize=*)                   ZBX_HISTORYINDEXCACHESIZE="${1#*=}"; shift ;;
+        --NodeAddress=*)                                       ZBX_NODEADDRESS="${1#*=}"; shift ;;
+        --StartReportWriters=*)                         ZBX_STARTREPORTWRITERS="${1#*=}"; shift ;;
+        --TrendCacheSize=*)                                 ZBX_TRENDCACHESIZE="${1#*=}"; shift ;;
+        --TrendFunctionCacheSize=*)                 ZBX_TRENDFUNCTIONCACHESIZE="${1#*=}"; shift ;;
+        --ValueCacheSize=*)                                 ZBX_VALUECACHESIZE="${1#*=}"; shift ;;
+        --WebServiceURL=*)                                   ZBX_WEBSERVICEURL="${1#*=}"; shift ;;
+        --TARGET_ZABBIX_SERVER_PGSQL=*)             TARGET_ZABBIX_SERVER_PGSQL="${1#*=}"; shift ;;
+        --TARGET_ZABBIX_AGENT2=*)                         TARGET_ZABBIX_AGENT2="${1#*=}"; shift ;;
+        --POSTGRES_SUPER_USER=*)                           POSTGRES_SUPER_USER="${1#*=}"; shift ;;
+        --POSTGRES_SUPER_PASS=*)                           POSTGRES_SUPER_PASS="${1#*=}"; shift ;;
+        --NETINT=*)                                                     NETINT="${1#*=}"; shift ;;
+        --Server=*)                                            ZBX_SERVER_HOST="${1#*=}"; shift ;;
+        --ServerActive=*)                                    ZBX_ACTIVESERVERS="${1#*=}"; shift ;;
+        --Repo=*)                                                     ZBX_REPO="${1#*=}"; shift ;;
         *) echo "Unknown parameter passed: $1"; exit 1 ;;
     esac
 done
 set -o xtrace
 
 # Set mandatory arguments
-if [[ -z "$DB_SERVER_HOST" || -z "$DB_SERVER_PORT" || -z "$POSTGRES_PASSWORD" || -z "$POSTGRES_USER" || -z "$POSTGRES_DB" || -z "$TARGET_ZABBIX_SERVER_PGSQL" || -z "$TARGET_ZABBIX_AGENT2" || -z "$ZBX_WEBSERVICEURL" || -z "$POSTGRES_SUPER_USER" || -z "$POSTGRES_SUPER_PASS" ]]; then
+if [[ -z "$DB_SERVER_HOST" || -z "$DB_SERVER_PORT" || -z "$POSTGRES_PASSWORD" || -z "$POSTGRES_USER" || -z "$POSTGRES_DB" || -z "$TARGET_ZABBIX_SERVER_PGSQL" || -z "$TARGET_ZABBIX_AGENT2" || -z "$ZBX_WEBSERVICEURL" || -z "$POSTGRES_SUPER_USER" || -z "$POSTGRES_SUPER_PASS" || -z "$ZBX_SERVER_HOST" || -z "$ZBX_ACTIVESERVERS" ]]; then
    echo "Usage:"
-   echo "$0 --DBHost='10.133.112.87' --DBPort='5432' --DBPassword='zabbix' --DBUser='zabbix' --DBName='zabbix' --TARGET_ZABBIX_SERVER_PGSQL='7.2.3' --TARGET_ZABBIX_AGENT2='7.2.3' --WebServiceURL='http://10.133.253.45:10053/report' --POSTGRES_SUPER_USER='postgres' --POSTGRES_SUPER_PASS='zabbix'"
+   echo "$0 --DBHost='10.133.112.87' --DBPort='5432' --DBPassword='zabbix' --DBUser='zabbix' --DBName='zabbix' --TARGET_ZABBIX_SERVER_PGSQL='7.2.3' --TARGET_ZABBIX_AGENT2='7.2.3' --WebServiceURL='http://10.133.253.45:10053/report' --POSTGRES_SUPER_USER='postgres' --POSTGRES_SUPER_PASS='zabbix' --ZBX_SERVER_HOST='app1,app2' --ZBX_ACTIVESERVERS='app1;app2' --Repo='https://repo.zabbix.com/zabbix/7.2/release/ubuntu/pool/main/z/zabbix-release/zabbix-release_latest_7.2+ubuntu22.04_all.deb'"
    exit 1
 fi
 
@@ -75,7 +78,7 @@ sudo sh -c 'echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresq
 rm -rf "/tmp/zabbix-release.dep"
 
 # download desired zabbix repository
-curl https://repo.zabbix.com/zabbix/7.2/release/ubuntu/pool/main/z/zabbix-release/zabbix-release_latest_7.2+ubuntu22.04_all.deb -o /tmp/zabbix-release.dep
+curl "${ZBX_REPO}" -o /tmp/zabbix-release.dep
 
 # install
 sudo dpkg -i /tmp/zabbix-release.dep
@@ -210,8 +213,8 @@ sudo systemctl enable zabbix-server
 # print current configuration:
 grep -Eor ^[^#]+ /etc/zabbix/zabbix_server.conf /etc/zabbix/zabbix_server.d | sort
 
-# check if installed version match desired version
 set +e
+# check if installed version match desired version
 dpkg-query --showformat='${Version}' --show zabbix-agent2 | grep -P "^1:${TARGET_ZABBIX_AGENT2}"
 if [ "$?" -ne "0" ]; then
 set -e
@@ -250,14 +253,17 @@ PidFile=/run/zabbix/zabbix_agent2.pid
 PluginSocket=/run/zabbix/agent.plugin.sock
 Plugins.SystemRun.LogRemoteCommands=0
 RefreshActiveChecks=5
-Server=127.0.0.1
-ServerActive=127.0.0.1
+Server=${ZBX_SERVER_HOST}
+ServerActive=${ZBX_ACTIVESERVERS}
 Timeout=28
 UnsafeUserParameters=0
 " | grep -vE "^$" | sudo tee /etc/zabbix/zabbix_agent2.conf
 
 # if checksum file does not exist then create an empty one
-[[ ! -f /etc/zabbix/md5sum.zabbix_agent2.conf ]] && sudo touch /etc/zabbix/md5sum.zabbix_agent2.conf
+if [ ! -f /etc/zabbix/md5sum.zabbix_agent2.conf ]; then
+sudo touch /etc/zabbix/md5sum.zabbix_agent2.conf
+sudo chmod 644 /etc/zabbix/md5sum.zabbix_agent2.conf
+fi
 # validate current checksum
 MD5SUM_ZABBIX_AGENT2_CONF=$(grep -r "=" /etc/zabbix/zabbix_agent2.conf /etc/zabbix/zabbix_agent2.d | sort | md5sum | grep -Eo "^\S+")
 # if checksum does not match with old 
